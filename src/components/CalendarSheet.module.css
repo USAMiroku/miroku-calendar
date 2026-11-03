@@ -1,0 +1,92 @@
+/* Sized for one landscape US Letter page (11 x 8.5 in, 0.35 in margins). */
+.sheet {
+  width: 100%;
+  max-width: 10.3in;
+  margin: 0 auto;
+  background: #fff;
+  color: #111;
+  font-family: Calibri, Carlito, "Segoe UI", Arial, sans-serif;
+  font-size: 10.5pt;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.banner { position: relative; text-align: center; }
+.sideBands { background: linear-gradient(to right, var(--band) 0 14%, #fff 14% 86%, var(--band) 86% 100%); }
+.topBand { border-top: 0.35in solid var(--band); }
+.plainBanner { border-bottom: 3px solid var(--band); }
+.bannerInner { padding: 6px 15% 8px; }
+.logo { width: 58px; height: 58px; display: block; margin: 0 auto 2px; }
+.titleMain, .titleLine, .monthTitle { color: var(--title); line-height: 1.2; }
+.titleMain { font-size: 17pt; font-weight: 700; }
+.titleLine { font-size: 11pt; font-weight: 600; }
+.monthTitle { font-size: 15pt; font-weight: 800; letter-spacing: 0.5px; margin-top: 2px; }
+
+.openHours {
+  margin: 6px 0;
+  padding: 4px 8px;
+  border: 1.5px solid var(--band);
+  font-size: 9.5pt;
+  text-align: center;
+}
+
+.table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.table th {
+  background: var(--header);
+  color: #fff;
+  font-size: 9.5pt;
+  font-weight: 700;
+  padding: 4px 6px;
+  text-align: left;
+  border: 1px solid #999;
+}
+.table td { border: 1px solid #b7b7b7; padding: 3px 6px; vertical-align: middle; }
+.colDate { width: 6%; }
+.colDay { width: 10%; }
+.colTime { width: 15%; }
+.colLoc { width: 37%; }
+.table td:last-child { font-size: 9pt; }
+.table th.colDate { text-align: center; }
+.dateCell { text-align: center; font-size: 22pt; font-weight: 800; background: #fff; color: #222; }
+
+.national td:not(.dateCell) { background: var(--c-national); }
+.public td:not(.dateCell) { background: var(--c-public); }
+.default td:not(.dateCell) { background: var(--c-default); }
+
+.primary { font-weight: 700; line-height: 1.25; }
+.secondary { font-style: italic; color: #595959; line-height: 1.25; }
+.note { font-weight: 400; font-style: italic; }
+.cancelled .primary, .cancelled .secondary { text-decoration: line-through; }
+.cancelTag { color: #c00000; font-weight: 800; font-size: 8.5pt; }
+.empty { text-align: center; padding: 20px; color: #666; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: center; margin-top: 6px; font-size: 9pt; }
+.legendItem { display: inline-flex; align-items: center; gap: 5px; }
+.swatch { width: 14px; height: 14px; border: 1px solid #888; display: inline-block; }
+
+/* Phone cards */
+.cards { display: none; list-style: none; margin: 0; padding: 0; }
+.card { display: flex; gap: 10px; border: 1px solid #c9c9c9; border-radius: 6px; padding: 8px; margin-bottom: 6px; background: var(--c-default); }
+.card.national { background: var(--c-national); }
+.card.public { background: var(--c-public); }
+.cardDate { font-size: 22pt; font-weight: 800; min-width: 38px; text-align: center; line-height: 1; padding-top: 2px; }
+.cardBody { flex: 1; min-width: 0; }
+.cardBody > div + div { margin-top: 3px; }
+.cardLoc { font-size: 9pt; color: #444; }
+.struck { text-decoration: line-through; }
+
+@media screen and (max-width: 700px) {
+  .sheet { font-size: 10.5pt; }
+  .table { display: none; }
+  .cards { display: block; margin-top: 8px; }
+  .legend { justify-content: flex-start; flex-direction: column; }
+  .sideBands { background: linear-gradient(to right, var(--band) 0 5%, #fff 5% 95%, var(--band) 95% 100%); }
+  .bannerInner { padding: 6px 7% 8px; }
+  .titleMain { font-size: 14pt; }
+}
+
+@media print {
+  .table tr { break-inside: avoid; }
+  /* FitToPage sets --print-zoom so a busy month still fits one page (down to 75 %). */
+  .sheet { zoom: var(--print-zoom, 1); }
+}
