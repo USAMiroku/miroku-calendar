@@ -18,3 +18,13 @@ export async function roleIn(orgId: string): Promise<Role | null> {
   const { data } = await sb.from("memberships").select("role").eq("org_id", orgId).eq("user_id", u.user.id).maybeSingle();
   return (data?.role as Role) ?? null;
 }
+
+/** True when the signed-in person is an admin of at least one organization (they may create new ones). */
+export async function isAnyAdmin(): Promise<boolean> {
+  if (DEMO_MODE) return true;
+  const sb = await supabaseServer();
+  const { data: u } = await sb.auth.getUser();
+  if (!u.user) return false;
+  const { data } = await sb.from("memberships").select("org_id").eq("user_id", u.user.id).eq("role", "admin").limit(1);
+  return (data?.length ?? 0) > 0;
+}

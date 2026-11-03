@@ -6,7 +6,8 @@
 import { revalidatePath } from "next/cache";
 import { DEMO_MODE, supabaseServer } from "./supabase/server";
 import { roleIn, type Role } from "./auth";
-import type { CalendarSettings, Localized, VenueType } from "./types";
+import type { CalendarSettings, Lang, Localized, VenueType } from "./types";
+import { newOrgSettings, RESERVED_SLUGS } from "./newOrg";
 
 export type Result = { ok: true; message?: string } | { ok: false; error: string };
 
@@ -266,5 +267,39 @@ export async function importEvents(orgSlug: string, rows: ImportRow[]): Promise<
       if (error) throw error;
     }
     return { ok: true, message: `Imported ${rows.length} events.` };
+  });
+}
+
+// ---------- organizations ----------
+
+export interface NewOrgInput {
+  name: string;
+  slug: string;
+  calendarSlug: string;
+  languages: [Lang] | [Lang, Lang];
+}
+
+/** Creates an organization with one calendar; the person creating it becomes its admin. */
+export async function createOrganization(input: NewOrgInput): Promise<Result> {
+  return run(async () => {
+    const name = input.name.trim();
+    const slug = input.slug.trim().toLowerCase();
+    const calSlug = input.calendarSlug.trim().toLowerCase();
+    if (!name) throw new Error("Please give the organization a name.");
+    for (const s of [slug, calSlug])
+      if (!/^[a-z0-9-]+$/.test(s)) throw new Error("Web names may use only a–z, 0–9 and dashes.");
+    if (RESERVED_SLUGS.includes(slug)) throw new Error("That web name is used by the app itself. Please choose another.");
+    if (["edit", "admin"].includes(calSlug)) throw new Error("That calendar web name is used by the app itself. Please choose another.");
+    const langs = input.languages.filter(Boolean) as Lang[];
+    if (langs.length < 1 || langs.length > 2 || langs[0] === langs[1]) throw new Error("Please choose one or two different languages.");
+    const sb = await supabaseServer();
+    const { error } = await sb.rpc("create_organization", {
+      p_slug: slug,
+      p_name: name,
+      p_calendar_slug: calSlug,
+      p_settings: newOrgSettings(name, langs as [Lang] | [Lang, Lang]),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true, message: slug };
   });
 }

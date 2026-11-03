@@ -1,16 +1,18 @@
 import Link from "next/link";
 import { listOrganizations } from "@/lib/data";
 import { DEMO_MODE } from "@/lib/supabase/server";
+import { isAnyAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const orgs = await listOrganizations();
+  const [orgs, admin] = await Promise.all([listOrganizations(), isAnyAdmin()]);
   return (
     <main className="container">
       <div className="toolbar">
         <h1 style={{ margin: 0 }}>Activities Calendar</h1>
         <span className="spacer" />
+        {admin && <Link className="btn" href="/new">New organization</Link>}
         <Link className="btn" href="/login">Editor sign-in</Link>
       </div>
       {DEMO_MODE && (
