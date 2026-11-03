@@ -61,7 +61,13 @@ Every change pushed to `main` goes online automatically.
 ## Giving volunteers access
 
 An admin opens **People**, enters the volunteer's email and picks **Editor** or **Admin**.
-The volunteer then clicks **Editor sign-in** and enters that email; no password is needed.
+The volunteer then clicks **Editor sign-in** and either presses **Continue with Google** (if that email is a
+Google account) or enters the email to get a sign-in link; no password is needed.
+
+Supabase's built-in email sends only a few sign-in emails per hour. Google sign-in avoids that limit. To turn it on:
+create an OAuth client (type "Web application") in Google Cloud Console → APIs & Services → Credentials, with the
+authorized redirect URI `https://<project-ref>.supabase.co/auth/v1/callback`; then paste its Client ID and secret in
+Supabase → Authentication → Sign In / Providers → Google, and enable it.
 Members who only read the calendar need nothing: share the month's link after pressing **Publish**.
 
 ## Adding another organization or centre
