@@ -34,6 +34,7 @@ Run the formatting tests with `npm test`.
 1. Create a free account at [supabase.com](https://supabase.com) (ideally with a shared Miroku email) and a new project.
 2. In the project, open **SQL Editor** and run, in this order:
    - the whole of `supabase/migrations/0001_schema.sql`
+   - the whole of `supabase/migrations/0002_new_organization.sql`
    - `supabase/seed.sql`, after replacing `CHANGE-ME@example.org` with the first admin's email.
      This loads the Canada groups, activities and calendars.
 3. In **Project Settings → API**, copy the Project URL and the `anon` public key.
@@ -66,6 +67,7 @@ Members who only read the calendar need nothing: share the month's link after pr
 ## Adding another organization or centre
 
 - A new **centre calendar** (e.g. Toronto only): **Calendars → Add a calendar**, untick "All groups" and pick the groups.
-- A new **organization** (e.g. Miroku Association USA): add a row in the Supabase `organizations` table,
-  then add yourself as admin in `invitations` (or `memberships`). Its groups, activities and calendars
-  are then managed from the app. Each calendar can use English, French, Portuguese or Spanish, one or two at a time.
+- A new **organization** (e.g. Miroku Association USA): sign in as an admin, press **New organization**
+  on the home page, and give its name, web name and languages. You become its admin, and it starts with one
+  calendar. Then add its groups and activities, and set the logo, banner and open hours on **Calendars**.
+  Each calendar can use English, French, Portuguese or Spanish, one or two at a time.
