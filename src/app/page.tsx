@@ -8,7 +8,11 @@ export default async function Home() {
   const orgs = await listOrganizations();
   return (
     <main className="container">
-      <h1>Activities Calendar</h1>
+      <div className="toolbar">
+        <h1 style={{ margin: 0 }}>Activities Calendar</h1>
+        <span className="spacer" />
+        <Link className="btn" href="/login">Editor sign-in</Link>
+      </div>
       {DEMO_MODE && (
         <p className="notice">
           Demo mode: no database is connected, so you are seeing sample data for Miroku Association Canada. See README.md to connect Supabase.
@@ -24,6 +28,7 @@ export default async function Home() {
               </li>
             ))}
           </ul>
+          <p><Link className="btn" href={`/${o.slug}/edit`}>Edit events</Link></p>
         </section>
       ))}
     </main>

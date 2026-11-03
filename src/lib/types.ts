@@ -23,6 +23,7 @@ export interface Group {
   timeZoneLabel: Localized; // empty when the group is in the calendar's home time zone
   venueType: VenueType;
   sortOrder?: number;
+  archived?: boolean;
 }
 
 export interface Activity {
@@ -33,6 +34,7 @@ export interface Activity {
   addGroupName: boolean;
   isNationalService: boolean;
   lastUsedAt?: string | null;
+  archived?: boolean;
 }
 
 export interface CalendarEvent {

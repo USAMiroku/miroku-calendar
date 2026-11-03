@@ -1,0 +1,37 @@
+.layout { display: grid; grid-template-columns: minmax(300px, 420px) 1fr; gap: 16px; align-items: start; }
+@media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+.panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.panel h2 { margin-top: 0; font-size: 1.2rem; }
+.form { display: grid; gap: 12px; }
+.form label { display: grid; gap: 4px; font-weight: 600; }
+.form label small { font-weight: 400; color: var(--muted); }
+.form input, .form select { width: 100%; font-size: 16px; min-height: 44px; }
+.form details { border: 1px dashed var(--border); border-radius: 8px; padding: 8px; display: grid; gap: 8px; }
+.form details[open] { display: grid; gap: 10px; }
+.check { display: flex !important; align-items: center; gap: 8px; font-weight: 400 !important; }
+.check input { width: auto; min-height: auto; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.preview { background: #fafafa; border: 1px solid var(--border); border-radius: 8px; padding: 8px; font-size: 14px; }
+.pPrimary { font-weight: 700; }
+.pSecondary { font-style: italic; color: #595959; }
+.actions { display: flex; gap: 8px; }
+.ok { color: #1e7b34; margin: 0; }
+.err { color: #b00020; margin: 0; }
+.list { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 6px; }
+.item { display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+.national { background: #D9E1F2; }
+.public { background: #E2EFDA; }
+.default { background: #fff; }
+.day { font-size: 1.6rem; font-weight: 800; min-width: 36px; text-align: center; }
+.itemText { flex: 1; min-width: 0; font-size: 14px; }
+.itemBtns { display: flex; gap: 6px; }
+.calList { list-style: none; padding: 0; display: grid; gap: 8px; }
+.calList li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.calList li > span:first-child { font-weight: 600; min-width: 160px; }
+.badgeOn, .badgeOff { font-size: 12px; padding: 2px 8px; border-radius: 99px; }
+.badgeOn { background: #d7f0dc; color: #1e5b2a; }
+.badgeOff { background: #eee; color: #555; }
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th, .table td { border-bottom: 1px solid var(--border); padding: 6px; text-align: left; vertical-align: top; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.form input[type="color"] { width: 64px; min-height: 36px; padding: 2px; }

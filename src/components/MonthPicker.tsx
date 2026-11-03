@@ -4,12 +4,12 @@ import { useRouter } from "next/navigation";
 import { monthName } from "@/lib/format";
 import type { Lang } from "@/lib/types";
 
-export default function MonthPicker({ base, year, month, lang }: { base: string; year: number; month: number; lang: Lang }) {
+export default function MonthPicker({ base, year, month, lang, query }: { base: string; year: number; month: number; lang: Lang; query?: boolean }) {
   const router = useRouter();
   const go = (y: number, m: number) => {
     if (m < 1) { y -= 1; m = 12; }
     if (m > 12) { y += 1; m = 1; }
-    router.push(`${base}/${y}/${m}`);
+    router.push(query ? `${base}?y=${y}&m=${m}` : `${base}/${y}/${m}`);
   };
   const thisYear = new Date().getFullYear();
   const years = Array.from({ length: thisYear - 2020 + 3 }, (_, i) => 2020 + i);
