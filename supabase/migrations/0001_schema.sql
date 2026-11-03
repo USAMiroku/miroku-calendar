@@ -1,7 +1,6 @@
 -- Miroku activities calendar: database schema for Supabase (Postgres).
 -- Run this once in the Supabase SQL editor (or with `supabase db push`).
 
-create extension if not exists pgcrypto;
 
 -- One row per organization (Miroku Association Canada, Miroku Association USA, ...)
 create table organizations (
@@ -153,3 +152,20 @@ end;
 $$;
 create trigger on_auth_user_created after insert on auth.users
   for each row execute function accept_invitations();
+
+-- Lets an admin add someone who already has an account. Returns null for anyone else.
+create or replace function user_id_by_email(e text)
+returns uuid language sql stable security definer set search_path = public, auth as $$
+  select u.id from auth.users u
+  where lower(u.email) = lower(e)
+    and exists (select 1 from memberships m where m.user_id = auth.uid() and m.role = 'admin')
+  limit 1;
+$$;
+
+-- People with access to an organization, with their email, for the admin People page.
+create or replace function org_people(o uuid)
+returns table (user_id uuid, email text, role text) language sql stable security definer set search_path = public, auth as $$
+  select m.user_id, u.email::text, m.role from memberships m join auth.users u on u.id = m.user_id
+  where m.org_id = o and is_member(o, 'admin')
+  order by u.email;
+$$;

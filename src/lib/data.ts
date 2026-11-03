@@ -19,11 +19,11 @@ export const monthRange = (y: number, m: number) => {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const toGroup = (r: any): Group => ({
   id: r.id, orgId: r.org_id, key: r.key, name: r.name, location: r.location,
-  timeZoneLabel: r.time_zone_label, venueType: r.venue_type, sortOrder: r.sort_order,
+  timeZoneLabel: r.time_zone_label, venueType: r.venue_type, sortOrder: r.sort_order, archived: r.archived,
 });
 export const toActivity = (r: any): Activity => ({
   id: r.id, orgId: r.org_id, key: r.key, name: r.name, addGroupName: r.add_group_name,
-  isNationalService: r.is_national_service, lastUsedAt: r.last_used_at,
+  isNationalService: r.is_national_service, lastUsedAt: r.last_used_at, archived: r.archived,
 });
 export const toCalendar = (r: any): Calendar => ({
   id: r.id, orgId: r.org_id, slug: r.slug, name: r.name, groupIds: r.group_ids ?? [],
@@ -46,6 +46,7 @@ export async function listOrganizations(): Promise<OrgWithCalendars[]> {
   return (data ?? []).map((o) => ({ id: o.id, slug: o.slug, name: o.name, calendars: (o.calendars ?? []).map(toCalendar) }));
 }
 
+/** Lists include archived groups and activities so past months still print; editors' dropdowns hide them. */
 export async function getOrgLists(orgSlug: string) {
   if (DEMO_MODE) {
     if (orgSlug !== canadaSeed.org.slug) return null;
@@ -55,8 +56,8 @@ export async function getOrgLists(orgSlug: string) {
   const { data: org } = await sb.from("organizations").select("*").eq("slug", orgSlug).maybeSingle();
   if (!org) return null;
   const [g, a, c] = await Promise.all([
-    sb.from("groups").select("*").eq("org_id", org.id).eq("archived", false).order("sort_order"),
-    sb.from("activities").select("*").eq("org_id", org.id).eq("archived", false).order("key"),
+    sb.from("groups").select("*").eq("org_id", org.id).order("sort_order"),
+    sb.from("activities").select("*").eq("org_id", org.id).order("key"),
     sb.from("calendars").select("*").eq("org_id", org.id).order("name"),
   ]);
   return {
@@ -85,4 +86,29 @@ export async function getMonthData(orgSlug: string, calSlug: string, year: numbe
   ]);
   if (ev.error) throw ev.error;
   return { ...lists, calendar, events: (ev.data ?? []).map(toEvent), year, month, published: !!pub.data };
+}
+
+/** All of an organization's events in a month, for the editor, plus which calendars have published it. */
+export async function getOrgMonth(orgId: string, year: number, month: number) {
+  const { from, to } = monthRange(year, month);
+  if (DEMO_MODE) {
+    return {
+      events: canadaSeed.events.filter((e) => e.date >= from && e.date < to),
+      publishedCalendarIds: canadaSeed.calendars.map((c) => c.id),
+    };
+  }
+  const sb = await supabaseServer();
+  const [ev, pub] = await Promise.all([
+    sb.from("events").select("*").eq("org_id", orgId).gte("date", from).lt("date", to).order("date").order("start_time"),
+    sb.from("published_months").select("calendar_id").eq("year", year).eq("month", month),
+  ]);
+  if (ev.error) throw ev.error;
+  return { events: (ev.data ?? []).map(toEvent), publishedCalendarIds: (pub.data ?? []).map((p) => p.calendar_id as string) };
+}
+
+/** Every language used by any of the organization's calendars, primary languages first. */
+export function orgLanguages(calendars: Calendar[]) {
+  const out: import("./types").Lang[] = [];
+  for (const c of calendars) for (const l of c.settings.languages) if (!out.includes(l)) out.push(l);
+  return out.length ? out : (["en"] as import("./types").Lang[]);
 }
