@@ -6,6 +6,7 @@ import type { Activity, Group, Lang, Localized, VenueType } from "@/lib/types";
 import { LANG_NAMES } from "@/lib/format";
 import { archiveItem, saveActivity, saveGroup, type ActivityInput, type GroupInput, type Result } from "@/lib/actions";
 import styles from "./Editor.module.css";
+import { TIME_ZONES, timeZoneId, timeZoneLabel } from "@/lib/timeZones";
 
 const VENUES: Record<VenueType, string> = { centre: "Centre", public: "Public venue", home: "Member home" };
 
@@ -31,6 +32,7 @@ export default function ListsEditor({ orgSlug, groups, activities, langs }: { or
   const [msg, setMsg] = useState<Result | null>(null);
   const [g, setG] = useState<GroupInput | null>(null);
   const [a, setA] = useState<ActivityInput | null>(null);
+  const [tzCustom, setTzCustom] = useState(false);
 
   const act = (fn: () => Promise<Result>, done: () => void) =>
     start(async () => {
@@ -53,7 +55,23 @@ export default function ListsEditor({ orgSlug, groups, activities, langs }: { or
             <label>Short name (used in the dropdown and CSV import)<input required value={g.key} onChange={(e) => setG({ ...g, key: e.target.value })} /></label>
             <LangFields label="Group name" value={g.name} langs={langs} onChange={(v) => setG({ ...g, name: v })} />
             <LangFields label="Location" value={g.location} langs={langs} onChange={(v) => setG({ ...g, location: v })} />
-            <LangFields label="Time zone label" hint="leave empty for the usual time zone" value={g.timeZoneLabel} langs={langs} onChange={(v) => setG({ ...g, timeZoneLabel: v })} />
+            <label>Time zone
+              <select
+                value={tzCustom ? "custom" : timeZoneId(g.timeZoneLabel)}
+                onChange={(e) => {
+                  setTzCustom(e.target.value === "custom");
+                  if (e.target.value !== "custom") setG({ ...g, timeZoneLabel: timeZoneLabel(e.target.value) });
+                }}
+              >
+                <option value="">Same as the calendar (not shown)</option>
+                {TIME_ZONES.map((z) => <option key={z.id} value={z.id}>{z.label.en}</option>)}
+                <option value="custom">Other (type it below)</option>
+              </select>
+              <small>Shown after the time, e.g. “6 – 8 PM (Pacific Time)”. Choose it only for groups in a different time zone from the calendar.</small>
+            </label>
+            {(tzCustom || timeZoneId(g.timeZoneLabel) === "custom") && (
+              <LangFields label="Time zone, as written on the calendar" value={g.timeZoneLabel} langs={langs} onChange={(v) => setG({ ...g, timeZoneLabel: v })} />
+            )}
             <label>Venue type
               <select value={g.venueType} onChange={(e) => setG({ ...g, venueType: e.target.value as VenueType })}>
                 {Object.entries(VENUES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -67,22 +85,23 @@ export default function ListsEditor({ orgSlug, groups, activities, langs }: { or
         ) : (
           <>
             <table className={styles.table}>
-              <thead><tr><th>Group</th><th>Location</th><th>Venue</th><th /></tr></thead>
+              <thead><tr><th>Group</th><th>Location</th><th>Time zone</th><th>Venue</th><th /></tr></thead>
               <tbody>
                 {groups.map((x) => (
                   <tr key={x.id}>
                     <td><strong>{x.key}</strong><br />{langs.map((l) => x.name[l]).filter(Boolean).join(" / ")}</td>
                     <td>{x.location[langs[0]]}</td>
+                    <td>{x.timeZoneLabel[langs[0]] || <span style={{ color: "var(--muted)" }}>—</span>}</td>
                     <td>{VENUES[x.venueType]}</td>
                     <td style={{ whiteSpace: "nowrap" }}>
-                      <button className="btn" onClick={() => setG({ ...x })}>Edit</button>{" "}
+                      <button className="btn" onClick={() => { setTzCustom(false); setG({ ...x }); }}>Edit</button>{" "}
                       <button className="btn" disabled={pending} onClick={() => confirm(`Remove ${x.key} from the list? Past months keep it.`) && act(() => archiveItem(orgSlug, "groups", x.id), () => {})}>Remove</button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <p><button className="btn primary" onClick={() => setG(newGroup())}>Add a group</button></p>
+            <p><button className="btn primary" onClick={() => { setTzCustom(false); setG(newGroup()); }}>Add a group</button></p>
           </>
         )}
       </section>
