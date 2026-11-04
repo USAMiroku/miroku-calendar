@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Activity, Calendar, CalendarEvent, Group, Lang, Localized } from "@/lib/types";
@@ -98,6 +98,19 @@ export default function EventEditor(p: Props) {
   };
 
   const prev = p.month === 1 ? { y: p.year - 1, m: 12 } : { y: p.year, m: p.month - 1 };
+  const [copyFrom, setCopyFrom] = useState(prev);
+  const [copyMsg, setCopyMsg] = useState<Result | null>(null);
+  // When the editor moves to another month, suggest copying from the month before it.
+  useEffect(() => {
+    setCopyFrom(p.month === 1 ? { y: p.year - 1, m: 12 } : { y: p.year, m: p.month - 1 });
+    setCopyMsg(null);
+  }, [p.year, p.month]);
+  const copy = () =>
+    start(async () => {
+      const r = await copyMonth(p.orgSlug, copyFrom.y, copyFrom.m, p.year, p.month);
+      setCopyMsg(r);
+      if (r.ok) router.refresh();
+    });
   const monthLabel = `${monthName(p.langs[0], p.month)} ${p.year}`;
 
   return (
@@ -182,14 +195,31 @@ export default function EventEditor(p: Props) {
         </div>
 
         <h2 style={{ textTransform: "capitalize" }}>{monthLabel} · {p.events.length} events</h2>
-        {p.events.length === 0 && (
-          <p>
-            No events yet.{" "}
-            <button className="btn" disabled={pending} onClick={() => act(() => copyMonth(p.orgSlug, prev.y, prev.m, p.year, p.month))}>
-              Copy last month’s events
+        <div className={styles.copyBox}>
+          <strong>{p.events.length === 0 ? "Start from another month" : "Copy events from another month"}</strong>
+          <div className={styles.copyRow}>
+            <select aria-label="Month to copy from" value={copyFrom.m} onChange={(e) => setCopyFrom({ ...copyFrom, m: Number(e.target.value) })}>
+              {Array.from({ length: 12 }, (_, i) => (
+                <option key={i + 1} value={i + 1}>{monthName(p.langs[0], i + 1).replace(/^./, (c) => c.toUpperCase())}</option>
+              ))}
+            </select>
+            <select aria-label="Year to copy from" value={copyFrom.y} onChange={(e) => setCopyFrom({ ...copyFrom, y: Number(e.target.value) })}>
+              {[p.year - 2, p.year - 1, p.year, p.year + 1].map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <button
+              className={p.events.length === 0 ? "btn primary" : "btn"}
+              disabled={pending}
+              onClick={() => {
+                if (p.events.length === 0 || confirm(`Add the events of ${monthName(p.langs[0], copyFrom.m)} ${copyFrom.y} to ${monthLabel}? Events already here are kept, and nothing is doubled.`))
+                  copy();
+              }}
+            >
+              Copy into {monthLabel}
             </button>
-          </p>
-        )}
+          </div>
+          <small>The 2nd Sunday goes to the 2nd Sunday, and weekly activities stay weekly. Nothing is published until you press Publish.</small>
+          {copyMsg && <p className={copyMsg.ok ? styles.ok : styles.err}>{copyMsg.ok ? copyMsg.message ?? "Done." : copyMsg.error}</p>}
+        </div>
         <ul className={styles.list}>
           {sortEvents(p.events).map((ev) => {
             const g = groupById.get(ev.groupId);

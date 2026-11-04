@@ -38,3 +38,6 @@
 .requests { background: #fff8e6; border: 1px solid #f0d58c; border-radius: 10px; padding: 12px; margin-bottom: 18px; }
 .requests h2 { margin-top: 0; }
 @media (max-width: 700px) { .itemBtns { flex-wrap: wrap; } .item { flex-wrap: wrap; } }
+.copyBox { background: #faf7f4; border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin: 0 0 14px; display: grid; gap: 8px; }
+.copyBox small { color: var(--muted); }
+.copyRow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
