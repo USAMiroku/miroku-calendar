@@ -8,6 +8,8 @@ import { DEMO_MODE, supabaseServer } from "./supabase/server";
 import { roleIn, type Role } from "./auth";
 import type { CalendarSettings, Lang, Localized, VenueType } from "./types";
 import { newOrgSettings, RESERVED_SLUGS } from "./newOrg";
+import { planCopy } from "./copyMonth";
+import { monthRange } from "./data";
 
 export type Result = { ok: true; message?: string } | { ok: false; error: string };
 
@@ -99,34 +101,42 @@ export async function deleteEvent(orgSlug: string, id: string): Promise<Result> 
   });
 }
 
+/** Copies one month's events into another, keeping the pattern (see copyMonth.ts). Events already there are not doubled. */
 export async function copyMonth(orgSlug: string, fromYear: number, fromMonth: number, toYear: number, toMonth: number): Promise<Result> {
-  // Copies each event to the same weekday of the same week number (1st Sunday → 1st Sunday).
   return run(async () => {
+    if (fromYear === toYear && fromMonth === toMonth) throw new Error("Choose a different month to copy from.");
     const { sb, orgId } = await orgFor(orgSlug, "editor");
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const from = `${fromYear}-${pad(fromMonth)}-01`;
-    const to = fromMonth === 12 ? `${fromYear + 1}-01-01` : `${fromYear}-${pad(fromMonth + 1)}-01`;
-    const { data, error } = await sb.from("events").select("*").eq("org_id", orgId).gte("date", from).lt("date", to);
-    if (error) throw error;
-    const rows = [];
-    for (const e of data ?? []) {
-      const d = new Date(e.date + "T00:00:00Z");
-      const weekday = d.getUTCDay();
-      const nth = Math.floor((d.getUTCDate() - 1) / 7); // 0 = first
-      const first = new Date(Date.UTC(toYear, toMonth - 1, 1));
-      const offset = (weekday - first.getUTCDay() + 7) % 7;
-      const target = new Date(Date.UTC(toYear, toMonth - 1, 1 + offset + nth * 7));
-      if (target.getUTCMonth() !== toMonth - 1) continue; // no 5th Sunday this month
-      rows.push({
-        org_id: orgId, date: target.toISOString().slice(0, 10), start_time: e.start_time, end_time: e.end_time,
+    const src = monthRange(fromYear, fromMonth);
+    const dst = monthRange(toYear, toMonth);
+    const [a, b] = await Promise.all([
+      sb.from("events").select("*").eq("org_id", orgId).gte("date", src.from).lt("date", src.to),
+      sb.from("events").select("date, start_time, group_id, activity_id").eq("org_id", orgId).gte("date", dst.from).lt("date", dst.to),
+    ]);
+    if (a.error) throw a.error;
+    if (b.error) throw b.error;
+    if (!a.data?.length) throw new Error("That month has no events to copy.");
+    const key = (date: string, start: string, g: string, act: string) => [date, start.slice(0, 5), g, act].join("|");
+    const existing = new Set((b.data ?? []).map((e) => key(e.date, String(e.start_time), e.group_id, e.activity_id)));
+    const plan = planCopy(
+      a.data.map((e) => ({ ...e, start: String(e.start_time).slice(0, 5), end: e.end_time, groupId: e.group_id, activityId: e.activity_id })),
+      toYear,
+      toMonth,
+    );
+    const rows = plan
+      .filter((e) => !existing.has(key(e.date, e.start, e.groupId, e.activityId)))
+      .map((e) => ({
+        org_id: orgId, date: e.date, start_time: e.start_time, end_time: e.end_time,
         group_id: e.group_id, activity_id: e.activity_id, note: e.note, cancelled: false,
-      });
-    }
+      }));
     if (rows.length) {
-      const { error: insErr } = await sb.from("events").insert(rows);
-      if (insErr) throw insErr;
+      const { error } = await sb.from("events").insert(rows);
+      if (error) throw error;
     }
-    return { ok: true, message: `Copied ${rows.length} events.` };
+    const skipped = plan.length - rows.length;
+    return {
+      ok: true,
+      message: `Copied ${rows.length} event${rows.length === 1 ? "" : "s"}.` + (skipped ? ` ${skipped} were already there.` : "") + " Check the dates, then add or delete the special ones.",
+    };
   });
 }
 
