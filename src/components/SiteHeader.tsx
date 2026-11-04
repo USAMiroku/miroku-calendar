@@ -18,7 +18,6 @@ export default async function SiteHeader() {
         </Link>
         <HideOnPublicCalendar hide={!user}>
           <nav className="site-nav">
-            <Link href="/#calendars">Calendars</Link>
             {orgs.length === 1 && <Link href={`/${orgs[0].slug}/edit`}>Edit events</Link>}
             {orgs.length > 1 && <Link href="/#workspace">My organizations</Link>}
             {user && orgs.length === 0 && <Link href="/join">Ask to join</Link>}
