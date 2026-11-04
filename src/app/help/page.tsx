@@ -10,10 +10,17 @@ const slug = (text: string) =>
   text.toLowerCase().replace(/<[^>]+>/g, "").replace(/&[a-z]+;/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 /** The user manual (docs/user-manual.md), shown as a page. One file is the source for both. */
-export default function HelpPage() {
-  const md = fs.readFileSync(path.join(process.cwd(), "docs/user-manual.md"), "utf8")
-    // The page already is the in-app copy, so drop the line that points to it.
-    .replace(/^The same guide is inside the app[\s\S]*?\n\n/m, "");
+const MANUALS = {
+  en: { file: "docs/user-manual.md", contents: "Contents", pdf: "Download PDF", video: "Watch the video", other: "Português", otherHref: "/help?lang=pt" },
+  pt: { file: "docs/user-manual.pt.md", contents: "Índice", pdf: "Baixar PDF", video: "Assistir ao vídeo", other: "English", otherHref: "/help" },
+};
+
+export default async function HelpPage({ searchParams }: { searchParams: Promise<{ lang?: string }> }) {
+  const lang = (await searchParams).lang === "pt" ? "pt" : "en";
+  const t = MANUALS[lang];
+  const md = fs.readFileSync(path.join(process.cwd(), t.file), "utf8")
+    // The page already is the in-app copy, so drop the paragraph that points to it.
+    .replace(/^(The same guide is inside the app|O mesmo guia está dentro do aplicativo)[\s\S]*?\n\n/m, "");
   const toc: { id: string; text: string }[] = [];
   const marked = new Marked({
     renderer: {
@@ -32,9 +39,14 @@ export default function HelpPage() {
   });
   const html = marked.parse(md, { async: false });
   return (
-    <main className="container help">
-      <nav className="help-toc no-print" aria-label="Contents">
-        <strong>Contents</strong>
+    <main className="container help" lang={lang}>
+      <nav className="help-toc no-print" aria-label={t.contents}>
+        <div className="help-actions">
+          <a className="btn primary small" href={`/manual/miroku-calendar-manual-${lang}.pdf`} download>⬇ {t.pdf}</a>
+          <a className="btn small" href={`/manual/miroku-calendar-video-${lang}.mp4`} target="_blank" rel="noreferrer">▶ {t.video}</a>
+          <a className="btn small" href={t.otherHref}>{t.other}</a>
+        </div>
+        <strong>{t.contents}</strong>
         <ol>
           {toc.map((t) => (
             <li key={t.id}><a href={`#${t.id}`} dangerouslySetInnerHTML={{ __html: t.text.replace(/^\d+\.\s*/, "") }} /></li>

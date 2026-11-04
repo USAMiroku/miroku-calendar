@@ -170,3 +170,15 @@ select, input, textarea {
   .help-toc { position: static; }
   .help-body { padding: 4px 16px 20px; }
 }
+.help-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+@media print {
+  .help { display: block; padding: 0; }
+  .help-body { border: 0; box-shadow: none; padding: 0; font-size: 11pt; }
+  .help-body h2 { break-after: avoid; }
+  .help-body h3, .help-body h4 { break-after: avoid; }
+  .help-body table, .help-body blockquote, .help-body li { break-inside: avoid; }
+  .help-body a { color: inherit; }
+}
+/* The manual prints upright (the calendar prints landscape). */
+@page manual { size: letter portrait; margin: 0.7in 0.75in; }
+@media print { .help { page: manual; } }

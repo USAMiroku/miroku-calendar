@@ -1,6 +1,7 @@
 # Miroku Calendar: User Manual
 
-**Web address:** https://miroku-calendar.vercel.app\
+**Web address:** https://miroku-calendar.vercel.app
+
 **For:** members, editors and admins of Miroku Association Canada, Miroku Association USA and their centres.
 
 The same guide is inside the app: sign in and click **Help** at the top of the page, or open
