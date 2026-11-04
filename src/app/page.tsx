@@ -2,7 +2,6 @@ import Link from "next/link";
 import { listOrganizations } from "@/lib/data";
 import { DEMO_MODE } from "@/lib/supabase/server";
 import { currentUser, displayName, isAnyAdmin, myOrganizations } from "@/lib/auth";
-import GoogleButton from "@/components/GoogleButton";
 import { LANG_NAMES } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +31,7 @@ export default async function Home() {
           </p>
           <div className="hero-actions">
             <a className="btn primary big" href="#calendars">See the calendars</a>
-            {!user && !DEMO_MODE && <GoogleButton big label="Sign in with Google" />}
+            {!user && <Link className="btn big" href="/login">Sign in to your organization</Link>}
             {user && mine.length === 0 && <Link className="btn big" href="/join">Ask to join your organization</Link>}
             {mine.length === 1 && <Link className="btn big" href={`/${mine[0].slug}/edit`}>Edit {mine[0].name}</Link>}
           </div>
@@ -119,11 +118,11 @@ export default async function Home() {
         <section className="section how">
           <h2>How to join as an editor</h2>
           <ol className="steps">
-            <li><strong>Sign in with Google.</strong> Your account is created the first time.</li>
-            <li><strong>Ask to join</strong> your organization, with a short note.</li>
-            <li><strong>An admin approves you</strong>, and you can start adding events.</li>
+            <li><strong>Choose your organization</strong> (Miroku Canada, Miroku USA…) and sign in with Google. Your account is created the first time.</li>
+            <li><strong>Ask to join</strong> it, with a short note. Only that organization’s admins see your request.</li>
+            <li><strong>One of its admins approves you</strong>, and you can start adding its events.</li>
           </ol>
-          {!user && !DEMO_MODE && <GoogleButton label="Sign in with Google" />}
+          {!user && <Link className="btn primary" href="/login">Sign in to your organization</Link>}
           {user && mine.length === 0 && <Link className="btn primary" href="/join">Ask to join</Link>}
         </section>
       </div>

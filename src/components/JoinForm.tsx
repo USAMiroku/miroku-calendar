@@ -42,12 +42,16 @@ export default function JoinForm({ options, pending, orgNames }: { options: { id
       )}
       {open.length > 0 ? (
         <form className="card form-grid" onSubmit={(e) => { e.preventDefault(); act(() => requestAccess(orgId, note)); }}>
-          <label>
-            Organization
-            <select value={orgId} onChange={(e) => setOrgId(e.target.value)}>
-              {open.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-            </select>
-          </label>
+          {open.length > 1 ? (
+            <label>
+              Organization
+              <select value={orgId} onChange={(e) => setOrgId(e.target.value)}>
+                {open.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+              </select>
+            </label>
+          ) : (
+            <p style={{ margin: 0 }}>Organization: <strong>{open[0].name}</strong></p>
+          )}
           <label>
             Note for the admin <span className="muted">(optional)</span>
             <textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. I coordinate the Toronto group and will enter our activities." />

@@ -9,7 +9,7 @@ export async function requireEditor(orgSlug: string, need: Role, path: string) {
   const lists = await getOrgLists(orgSlug);
   if (!lists) redirect("/");
   const role = await roleIn(lists.org.id);
-  if (!role) redirect((await currentUser()) ? "/join" : `/login?next=${encodeURIComponent(path)}`);
+  if (!role) redirect((await currentUser()) ? `/join?org=${orgSlug}` : `/login?next=${encodeURIComponent(path)}`);
   if (need === "admin" && role !== "admin") redirect(`/${orgSlug}/edit`);
   return { ...lists, role };
 }
