@@ -143,3 +143,7 @@ select, input, textarea {
 }
 .org-choice:hover { border-color: var(--accent); color: var(--accent); }
 .org-choice span { font-size: 1.4rem; color: var(--muted); }
+
+/* Welcome page for visitors: just the logo, the name and the sign-in button, filling the screen. */
+.hero.door { min-height: calc(100vh - 180px); display: flex; align-items: center; border-bottom: 0; }
+.hero.door .hero-inner { width: 100%; }

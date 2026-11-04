@@ -1,26 +1,16 @@
 import Link from "next/link";
-import { listOrganizations } from "@/lib/data";
 import { DEMO_MODE } from "@/lib/supabase/server";
 import { currentUser, displayName, isAnyAdmin, myOrganizations } from "@/lib/auth";
-import { LANG_NAMES } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
-const FEATURES = [
-  { icon: "🗓️", title: "Plan in minutes", text: "Add an event with a date, a time, a group and an activity. Everything else fills in by itself, in every language." },
-  { icon: "🖨️", title: "One page, ready to print", text: "Each month fits one landscape Letter page, with the banner, open hours and colour legend, or saves as a PDF." },
-  { icon: "🔗", title: "One link for everyone", text: "Members open the calendar on their phone. Publish a month when it is ready; earlier months stay available." },
-  { icon: "🌎", title: "Your languages", text: "English, French, Portuguese or Spanish, one or two at a time, for each organization and each centre." },
-];
-
 export default async function Home() {
   const user = await currentUser();
-  const [orgs, mine, admin] = await Promise.all([listOrganizations(), myOrganizations(), isAnyAdmin()]);
-  const myIds = new Map(mine.map((o) => [o.id, o.role]));
+  const [mine, admin] = await Promise.all([myOrganizations(), isAnyAdmin()]);
 
   return (
     <main>
-      <section className="hero">
+      <section className={user ? "hero" : "hero door"}>
         <div className="hero-inner">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="hero-logo" src="/izunome-logo.png" alt="Izunome" width={96} height={96} />
@@ -76,54 +66,6 @@ export default async function Home() {
           </section>
         )}
 
-        <section id="calendars" className="section">
-          <h2>Calendars</h2>
-          <p className="muted">Open any calendar to see this month’s activities. No sign-in needed.</p>
-          <div className="card-grid">
-            {orgs.map((o) => (
-              <div key={o.id} className="card org-card">
-                <h3>{o.name}</h3>
-                <ul className="cal-links">
-                  {o.calendars.map((c) => (
-                    <li key={c.id}>
-                      <Link href={`/${o.slug}/${c.slug}`}>
-                        <span className="cal-name">{c.name}</span>
-                        <span className="cal-langs">{c.settings.languages.map((l) => LANG_NAMES[l].split(" ")[0]).join(" · ")}</span>
-                        <span aria-hidden="true">→</span>
-                      </Link>
-                    </li>
-                  ))}
-                  {o.calendars.length === 0 && <li className="muted">No calendar yet.</li>}
-                </ul>
-                {myIds.has(o.id) && <Link className="small-link" href={`/${o.slug}/edit`}>Edit events</Link>}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="section">
-          <h2>What it does</h2>
-          <div className="feature-grid">
-            {FEATURES.map((f) => (
-              <div key={f.title} className="feature">
-                <div className="feature-icon" aria-hidden="true">{f.icon}</div>
-                <h3>{f.title}</h3>
-                <p>{f.text}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="section how">
-          <h2>How to join as an editor</h2>
-          <ol className="steps">
-            <li><strong>Choose your organization</strong> (Miroku Canada, Miroku USA…) and sign in with Google. Your account is created the first time.</li>
-            <li><strong>Ask to join</strong> it, with a short note. Only that organization’s admins see your request.</li>
-            <li><strong>One of its admins approves you</strong>, and you can start adding its events.</li>
-          </ol>
-          {!user && <Link className="btn primary" href="/login">Sign in to your organization</Link>}
-          {user && mine.length === 0 && <Link className="btn primary" href="/join">Ask to join</Link>}
-        </section>
       </div>
     </main>
   );
