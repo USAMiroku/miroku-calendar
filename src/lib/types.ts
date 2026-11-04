@@ -70,6 +70,8 @@ export interface CalendarSettings {
   openHours?: Localized;
   legend: LegendEntry[];
   colours: { national: string; public: string; default: string };
+  /** Where the calendar's times are, as a time zone id from timeZones.ts (e.g. "eastern"). Used by phone calendars. */
+  timeZone?: string;
 }
 
 export interface Calendar {

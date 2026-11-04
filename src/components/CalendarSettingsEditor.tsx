@@ -1,5 +1,6 @@
 "use client";
 
+import { DEFAULT_HOME_ZONE, TIME_ZONES } from "@/lib/timeZones";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { BannerStyle, Calendar, Group, Lang, Localized } from "@/lib/types";
@@ -105,6 +106,13 @@ export default function CalendarSettingsEditor({ orgSlug, orgName, calendars, gr
             </select>
           </label>
         </div>
+
+        <label>Time zone of this calendar
+          <select value={s.timeZone ?? DEFAULT_HOME_ZONE} onChange={(e) => setS({ timeZone: e.target.value })}>
+            {TIME_ZONES.map((z) => <option key={z.id} value={z.id}>{z.label.en}</option>)}
+          </select>
+          <small className="muted">Times without a group time zone are in this zone. Phones use it to place activities at the right hour.</small>
+        </label>
 
         <fieldset className={styles.panel}>
           <legend>Groups shown</legend>
