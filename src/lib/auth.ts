@@ -28,3 +28,32 @@ export async function isAnyAdmin(): Promise<boolean> {
   const { data } = await sb.from("memberships").select("org_id").eq("user_id", u.user.id).eq("role", "admin").limit(1);
   return (data?.length ?? 0) > 0;
 }
+
+export interface MyOrg {
+  id: string;
+  slug: string;
+  name: string;
+  role: Role;
+}
+
+/** The organizations the signed-in person belongs to. */
+export async function myOrganizations(): Promise<MyOrg[]> {
+  if (DEMO_MODE) return [];
+  const sb = await supabaseServer();
+  const { data: u } = await sb.auth.getUser();
+  if (!u.user) return [];
+  const { data } = await sb.from("memberships").select("role, organizations(id, slug, name)").eq("user_id", u.user.id);
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  return ((data ?? []) as any[])
+    .filter((m) => m.organizations)
+    .map((m) => ({ id: m.organizations.id, slug: m.organizations.slug, name: m.organizations.name, role: m.role as Role }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+}
+
+/** A friendly first name for the header, from the Google profile or the email. */
+export function displayName(user: { email?: string | null; user_metadata?: Record<string, unknown> } | null) {
+  if (!user) return "";
+  const full = (user.user_metadata?.full_name ?? user.user_metadata?.name) as string | undefined;
+  return full?.trim() || user.email || "";
+}

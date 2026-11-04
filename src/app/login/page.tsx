@@ -1,73 +1,31 @@
-import { sendSignInLink, signInWithGoogle } from "./actions";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import GoogleButton from "@/components/GoogleButton";
+import { currentUser } from "@/lib/auth";
 import { DEMO_MODE } from "@/lib/supabase/server";
 
-export default async function Login({
-  searchParams,
-}: {
-  searchParams: Promise<{ sent?: string; error?: string; next?: string }>;
-}) {
+export const metadata: Metadata = { title: "Sign in" };
+export const dynamic = "force-dynamic";
+
+export default async function Login({ searchParams }: { searchParams: Promise<{ error?: string; next?: string }> }) {
   const sp = await searchParams;
+  const next = sp.next && sp.next.startsWith("/") && !sp.next.startsWith("//") ? sp.next : "/";
+  if (await currentUser()) redirect(next);
   return (
-    <main className="container" style={{ maxWidth: 440 }}>
-      <h1>Editor sign-in</h1>
-      {DEMO_MODE && (
-        <p className="notice">
-          Demo mode: sign-in is off until a database is connected. You can still
-          look around the editor pages.
+    <main className="container">
+      <div className="auth-card">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/izunome-logo.png" alt="" width={72} height={72} />
+        <h1>Sign in to Miroku Calendar</h1>
+        <p className="muted">Use your Google account. If it’s your first time, this also creates your account.</p>
+        {DEMO_MODE && <p className="notice">Demo mode: sign-in is off until a database is connected.</p>}
+        <GoogleButton next={next} big />
+        {sp.error && <p className="notice" style={{ marginTop: 16 }}>{sp.error}</p>}
+        <p className="fine">
+          Anyone can read the published calendars without signing in. To add or change events, sign in and
+          ask to join your organization; an admin approves you.
         </p>
-      )}
-      {sp.sent ? (
-        <p>Check your email for a sign-in link. You can close this page.</p>
-      ) : (
-        <>
-          <form
-            action={signInWithGoogle}
-            style={{ display: "grid", marginBottom: 18 }}
-          >
-            <input type="hidden" name="next" value={sp.next ?? "/"} />
-            <button
-              className="btn"
-              type="submit"
-              style={{ fontSize: "1.05rem", padding: "10px 14px" }}
-            >
-              Continue with Google
-            </button>
-          </form>
-          <p
-            style={{
-              textAlign: "center",
-              color: "var(--muted)",
-              margin: "0 0 12px",
-            }}
-          >
-            or get a link by email
-          </p>
-          <form action={sendSignInLink} style={{ display: "grid", gap: 10 }}>
-            <label htmlFor="email">Your email address</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-            />
-            <input type="hidden" name="next" value={sp.next ?? "/"} />
-            <button className="btn primary" type="submit">
-              Email me a sign-in link
-            </button>
-            <small style={{ color: "var(--muted)" }}>
-              No password needed. Only people an admin has invited can edit.
-            </small>
-          </form>
-        </>
-      )}
-      {sp.error && (
-        <p className="notice">
-          {/rate limit/i.test(sp.error)
-            ? "Too many sign-in emails were sent in the last hour. Please use Continue with Google, or try the email link again in an hour."
-            : sp.error}
-        </p>
-      )}
+      </div>
     </main>
   );
 }

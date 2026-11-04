@@ -35,6 +35,7 @@ Run the formatting tests with `npm test`.
 2. In the project, open **SQL Editor** and run, in this order:
    - the whole of `supabase/migrations/0001_schema.sql`
    - the whole of `supabase/migrations/0002_new_organization.sql`
+   - the whole of `supabase/migrations/0003_access_requests.sql`
    - `supabase/seed.sql`, after replacing `CHANGE-ME@example.org` with the first admin's email.
      This loads the Canada groups, activities and calendars.
 3. In **Project Settings → API**, copy the Project URL and the `anon` public key.
@@ -58,17 +59,21 @@ the included GitHub Action (`.github/workflows/keep-awake.yml`) visits once a da
 
 Every change pushed to `main` goes online automatically.
 
-## Giving volunteers access
+## Signing in and joining (Google only)
 
-An admin opens **People**, enters the volunteer's email and picks **Editor** or **Admin**.
-The volunteer then clicks **Editor sign-in** and either presses **Continue with Google** (if that email is a
-Google account) or enters the email to get a sign-in link; no password is needed.
+Everyone signs in with **Continue with Google**; the first sign-in creates the account. There are no passwords
+and no sign-in emails.
 
-Supabase's built-in email sends only a few sign-in emails per hour. Google sign-in avoids that limit. To turn it on:
-create an OAuth client (type "Web application") in Google Cloud Console → APIs & Services → Credentials, with the
-authorized redirect URI `https://<project-ref>.supabase.co/auth/v1/callback`; then paste its Client ID and secret in
-Supabase → Authentication → Sign In / Providers → Google, and enable it.
-Members who only read the calendar need nothing: share the month's link after pressing **Publish**.
+- **Sign up:** a new person signs in, opens **Ask to join**, picks their organization and sends a short note.
+  The organization's admins see the request at the top of **People** and approve it (as editor or admin) or decline it.
+- **Invite:** an admin can also add a Google email on **People** ahead of time; that person gets their role the
+  first time they sign in.
+- Members who only read the calendar need nothing: share the month's link after pressing **Publish**.
+
+To set up Google sign-in: create an OAuth client (type "Web application") in Google Cloud Console → Google Auth
+Platform → Clients, with the authorized redirect URI `https://<project-ref>.supabase.co/auth/v1/callback`; then paste
+its Client ID and secret in Supabase → Authentication → Sign In / Providers → Google, and enable it. You can turn the
+Email provider off there so Google is the only way in.
 
 ## Adding another organization or centre
 
