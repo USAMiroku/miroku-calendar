@@ -2,24 +2,8 @@
 // Pure presentation: give it a month's data and it renders the same thing on screen and on paper.
 
 import type { MonthData } from "@/lib/types";
-import { formatEvent, formatMonthTitle, joinDistinct, label, localizedLine, sortEvents, type FormattedEvent } from "@/lib/format";
+import { eventsForCalendar, formatMonthTitle, joinDistinct, label, localizedLine } from "@/lib/format";
 import styles from "./CalendarSheet.module.css";
-
-export function eventsForCalendar(data: MonthData): FormattedEvent[] {
-  const { calendar, groups, activities, events } = data;
-  const langs = calendar.settings.languages;
-  const groupById = new Map(groups.map((g) => [g.id, g]));
-  const actById = new Map(activities.map((a) => [a.id, a]));
-  const out: FormattedEvent[] = [];
-  for (const e of sortEvents(events)) {
-    const g = groupById.get(e.groupId);
-    const a = actById.get(e.activityId);
-    if (!g || !a) continue;
-    const inScope = calendar.groupIds.length === 0 || calendar.groupIds.includes(g.id) || (calendar.includeNational && a.isNationalService);
-    if (inScope) out.push(formatEvent(e, g, a, langs));
-  }
-  return out;
-}
 
 export default function CalendarSheet({ data }: { data: MonthData }) {
   const s = data.calendar.settings;

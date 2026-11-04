@@ -1,7 +1,7 @@
 // Turns stored data into the exact text printed on the calendar, in each language.
 // Every rule from the original spec has a test in format.test.ts.
 
-import type { Activity, CalendarEvent, Group, Lang, Localized, VenueType } from "./types";
+import type { Activity, CalendarEvent, Group, Lang, Localized, MonthData, VenueType } from "./types";
 
 export const LANG_NAMES: Record<Lang, string> = {
   en: "English",
@@ -187,4 +187,21 @@ export function formatEvent(event: CalendarEvent, group: Group, activity: Activi
 /** Sort by date, then start time. */
 export function sortEvents<T extends Pick<CalendarEvent, "date" | "start">>(events: T[]): T[] {
   return [...events].sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+}
+
+/** The events a calendar shows (its groups, plus national services if asked), sorted and formatted. */
+export function eventsForCalendar(data: Pick<MonthData, "calendar" | "groups" | "activities" | "events">): FormattedEvent[] {
+  const { calendar, groups, activities, events } = data;
+  const langs = calendar.settings.languages;
+  const groupById = new Map(groups.map((g) => [g.id, g]));
+  const actById = new Map(activities.map((a) => [a.id, a]));
+  const out: FormattedEvent[] = [];
+  for (const e of sortEvents(events)) {
+    const g = groupById.get(e.groupId);
+    const a = actById.get(e.activityId);
+    if (!g || !a) continue;
+    const inScope = calendar.groupIds.length === 0 || calendar.groupIds.includes(g.id) || (calendar.includeNational && a.isNationalService);
+    if (inScope) out.push(formatEvent(e, g, a, langs));
+  }
+  return out;
 }

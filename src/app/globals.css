@@ -118,3 +118,19 @@ select, input, textarea {
   .paper { padding: 8px; }
 }
 .tab.active { background: #fff; color: var(--accent); border: 1px solid var(--border); border-bottom-color: #fff; margin-bottom: -1px; font-weight: 600; }
+
+/* ---------- add to my calendar ---------- */
+.add-cal { position: relative; }
+.add-cal-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; width: min(340px, calc(100vw - 32px));
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); padding: 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.add-cal-menu p { margin: 0 0 4px; font-size: 14px; }
+.add-cal-option {
+  display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--border); background: #fff; color: var(--fg); text-decoration: none; font: inherit; cursor: pointer;
+}
+.add-cal-option:hover { border-color: var(--accent); }
+.add-cal-option small { color: var(--muted); font-size: 13px; line-height: 1.35; }
+@media (max-width: 640px) { .add-cal-menu { left: 0; right: auto; } }

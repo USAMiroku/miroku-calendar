@@ -112,3 +112,29 @@ export function orgLanguages(calendars: Calendar[]) {
   for (const c of calendars) for (const l of c.settings.languages) if (!out.includes(l)) out.push(l);
   return out.length ? out : (["en"] as import("./types").Lang[]);
 }
+
+/** A calendar's published events from three months back to a year ahead, for the phone calendar feed. */
+export async function getFeedData(orgSlug: string, calSlug: string, today = new Date()) {
+  const lists = await getOrgLists(orgSlug);
+  const calendar = lists?.calendars.find((c) => c.slug === calSlug);
+  if (!lists || !calendar) return null;
+  const y = today.getUTCFullYear();
+  const m = today.getUTCMonth() + 1;
+  const back = m - 3 < 1 ? [y - 1, m + 9] : [y, m - 3];
+  const from = monthRange(back[0], back[1]).from;
+  const to = monthRange(y + 1, m).to;
+
+  if (DEMO_MODE) {
+    return { ...lists, calendar, events: canadaSeed.events.filter((e) => e.date >= from && e.date < to) };
+  }
+  const sb = await supabaseServer();
+  const [ev, pub] = await Promise.all([
+    sb.from("events").select("*").eq("org_id", lists.org.id).gte("date", from).lt("date", to),
+    sb.from("published_months").select("year, month").eq("calendar_id", calendar.id),
+  ]);
+  if (ev.error) throw ev.error;
+  // Only months this calendar has published, so drafts never reach anyone's phone.
+  const published = new Set((pub.data ?? []).map((p) => `${p.year}-${pad(p.month)}`));
+  const events = (ev.data ?? []).map(toEvent).filter((e) => published.has(e.date.slice(0, 7)));
+  return { ...lists, calendar, events };
+}

@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import type { Metadata } from "next";
 import CalendarSheet from "@/components/CalendarSheet";
 import MonthPicker from "@/components/MonthPicker";
 import PrintButton from "@/components/PrintButton";
+import AddToCalendar from "@/components/AddToCalendar";
 import FitToPage from "@/components/FitToPage";
 import { getMonthData } from "@/lib/data";
 import { formatMonthTitle } from "@/lib/format";
@@ -28,6 +30,10 @@ export default async function MonthPage({ params }: { params: Promise<Params> })
   const p = await params;
   const data = await load(p);
   if (!data) notFound();
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "miroku-calendar.vercel.app";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  const feedUrl = `${proto}://${host}/${p.org}/${p.cal}/feed.ics`;
   return (
     <main className="container">
       <div className="page-title no-print">
@@ -37,6 +43,7 @@ export default async function MonthPage({ params }: { params: Promise<Params> })
       <div className="toolbar no-print">
         <MonthPicker base={`/${p.org}/${p.cal}`} year={data.year} month={data.month} lang={data.calendar.settings.languages[0]} />
         <span className="spacer" />
+        <AddToCalendar feedUrl={feedUrl} name={data.calendar.name} lang={data.calendar.settings.languages[0]} />
         <PrintButton />
       </div>
       {!data.published && (
