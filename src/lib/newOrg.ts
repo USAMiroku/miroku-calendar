@@ -12,7 +12,7 @@ const TITLE: Record<Lang, string> = {
   pt: "CALENDÁRIO DE ATIVIDADES",
   es: "CALENDARIO DE ACTIVIDADES",
 };
-const NATIONAL: Record<Lang, string> = { en: "National Service", fr: "Service national", pt: "Culto nacional", es: "Culto nacional" };
+const NATIONAL: Record<Lang, string> = { en: "Service", fr: "Service", pt: "Culto", es: "Culto" };
 const REGIONAL: Record<Lang, string> = {
   en: "Regional group gathering",
   fr: "Rencontre de groupe régionale",

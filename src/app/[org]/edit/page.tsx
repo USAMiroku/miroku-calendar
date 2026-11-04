@@ -24,6 +24,7 @@ export default async function EditPage({ params, searchParams }: { params: Promi
         events={events}
         publishedCalendarIds={publishedCalendarIds}
         langs={orgLanguages(ctx.calendars)}
+        admin={ctx.role === "admin"}
       />
     </EditorShell>
   );
