@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { invitePerson, removePerson, type Result } from "@/lib/actions";
+import { decideRequest, invitePerson, removePerson, type Result } from "@/lib/actions";
 import styles from "./Editor.module.css";
 
 export interface Person {
@@ -12,7 +12,15 @@ export interface Person {
   role: "admin" | "editor";
 }
 
-export default function PeopleEditor({ orgSlug, people }: { orgSlug: string; people: Person[] }) {
+export interface JoinRequest {
+  userId: string;
+  email: string;
+  name: string;
+  message: string;
+  since: string;
+}
+
+export default function PeopleEditor({ orgSlug, people, requests = [] }: { orgSlug: string; people: Person[]; requests?: JoinRequest[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<Result | null>(null);
@@ -27,6 +35,27 @@ export default function PeopleEditor({ orgSlug, people }: { orgSlug: string; peo
 
   return (
     <section className={styles.panel}>
+      {requests.length > 0 && (
+        <div className={styles.requests}>
+          <h2>Asking to join ({requests.length})</h2>
+          <ul className={styles.list}>
+            {requests.map((r) => (
+              <li key={r.userId} className={styles.item}>
+                <div className={styles.itemText}>
+                  <strong>{r.name || r.email}</strong> {r.name && <small>{r.email}</small>}
+                  {r.message && <div><em>“{r.message}”</em></div>}
+                  <small>Asked {new Date(r.since).toLocaleDateString()}</small>
+                </div>
+                <div className={styles.itemBtns}>
+                  <button className="btn primary" disabled={pending} onClick={() => act(() => decideRequest(orgSlug, r.userId, "editor"))}>Approve as editor</button>
+                  <button className="btn" disabled={pending} onClick={() => act(() => decideRequest(orgSlug, r.userId, "admin"))}>As admin</button>
+                  <button className="btn" disabled={pending} onClick={() => act(() => decideRequest(orgSlug, r.userId, "decline"))}>Decline</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <h2>People who can edit</h2>
       <p><strong>Editors</strong> add and change events and publish months. <strong>Admins</strong> also manage groups, activities, calendars and people. Members who only read the calendar don’t need an account: share the month’s link with them.</p>
       <form className={styles.form} style={{ maxWidth: 520 }} onSubmit={(e) => { e.preventDefault(); act(() => invitePerson(orgSlug, email, role)); }}>
@@ -38,7 +67,7 @@ export default function PeopleEditor({ orgSlug, people }: { orgSlug: string; peo
           </select>
         </label>
         <button className="btn primary" disabled={pending}>Give access</button>
-        <small>Then tell them to open the site, click “Editor sign-in” and enter this email. No password is needed.</small>
+        <small>They sign in at miroku-calendar.vercel.app with the Google account for this email. They can also sign in first and ask to join; their request then appears below.</small>
       </form>
       {msg && <p className={msg.ok ? styles.ok : styles.err}>{msg.ok ? msg.message ?? "Done." : msg.error}</p>}
       <table className={styles.table} style={{ marginTop: 16 }}>

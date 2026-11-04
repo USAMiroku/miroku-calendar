@@ -30,6 +30,10 @@ export default async function MonthPage({ params }: { params: Promise<Params> })
   if (!data) notFound();
   return (
     <main className="container">
+      <div className="page-title no-print">
+        <small>{data.org.name}</small>
+        <h1>{data.calendar.name}</h1>
+      </div>
       <div className="toolbar no-print">
         <MonthPicker base={`/${p.org}/${p.cal}`} year={data.year} month={data.month} lang={data.calendar.settings.languages[0]} />
         <span className="spacer" />

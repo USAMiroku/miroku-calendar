@@ -35,3 +35,6 @@
 .table th, .table td { border-bottom: 1px solid var(--border); padding: 6px; text-align: left; vertical-align: top; }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
 .form input[type="color"] { width: 64px; min-height: 36px; padding: 2px; }
+.requests { background: #fff8e6; border: 1px solid #f0d58c; border-radius: 10px; padding: 12px; margin-bottom: 18px; }
+.requests h2 { margin-top: 0; }
+@media (max-width: 700px) { .itemBtns { flex-wrap: wrap; } .item { flex-wrap: wrap; } }

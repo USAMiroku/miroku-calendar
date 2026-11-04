@@ -303,3 +303,48 @@ export async function createOrganization(input: NewOrgInput): Promise<Result> {
     return { ok: true, message: slug };
   });
 }
+
+// ---------- sign-up: asking to join an organization ----------
+
+/** A signed-in person asks to join an organization; its admins see the request on the People page. */
+export async function requestAccess(orgId: string, message: string): Promise<Result> {
+  return run(async () => {
+    const sb = await supabaseServer();
+    const { data: u } = await sb.auth.getUser();
+    if (!u.user) throw new Error("Please sign in first.");
+    const name = String(u.user.user_metadata?.full_name ?? u.user.user_metadata?.name ?? "");
+    const { error } = await sb.from("access_requests").insert({
+      org_id: orgId,
+      user_id: u.user.id,
+      email: u.user.email ?? "",
+      name,
+      message: message.trim().slice(0, 500),
+    });
+    if (error) throw new Error(error.code === "23505" ? "You have already asked to join this organization." : error.message);
+    return { ok: true, message: "Request sent. An admin will approve it soon." };
+  });
+}
+
+export async function withdrawRequest(orgId: string): Promise<Result> {
+  return run(async () => {
+    const sb = await supabaseServer();
+    const { data: u } = await sb.auth.getUser();
+    if (!u.user) throw new Error("Please sign in first.");
+    const { error } = await sb.from("access_requests").delete().eq("org_id", orgId).eq("user_id", u.user.id);
+    if (error) throw error;
+  });
+}
+
+/** An admin approves (as editor or admin) or declines a request to join. */
+export async function decideRequest(orgSlug: string, userId: string, decision: Role | "decline"): Promise<Result> {
+  return run(async () => {
+    const { sb, orgId } = await orgFor(orgSlug, "admin");
+    if (decision !== "decline") {
+      const { error } = await sb.from("memberships").upsert({ org_id: orgId, user_id: userId, role: decision });
+      if (error) throw error;
+    }
+    const { error } = await sb.from("access_requests").delete().eq("org_id", orgId).eq("user_id", userId);
+    if (error) throw error;
+    return { ok: true, message: decision === "decline" ? "Request declined." : "Approved. They can edit now." };
+  });
+}
