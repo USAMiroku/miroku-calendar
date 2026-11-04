@@ -30,10 +30,9 @@ export default async function Home() {
             and share it with every member.
           </p>
           <div className="hero-actions">
-            <a className="btn primary big" href="#calendars">See the calendars</a>
-            {!user && <Link className="btn big" href="/login">Sign in to your organization</Link>}
-            {user && mine.length === 0 && <Link className="btn big" href="/join">Ask to join your organization</Link>}
-            {mine.length === 1 && <Link className="btn big" href={`/${mine[0].slug}/edit`}>Edit {mine[0].name}</Link>}
+            {!user && <Link className="btn primary big" href="/login">Sign in to your organization</Link>}
+            {user && mine.length === 0 && <Link className="btn primary big" href="/join">Ask to join your organization</Link>}
+            {mine.length === 1 && <Link className="btn primary big" href={`/${mine[0].slug}/edit`}>Edit {mine[0].name}</Link>}
           </div>
         </div>
       </section>
