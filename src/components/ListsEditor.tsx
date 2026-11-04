@@ -113,7 +113,7 @@ export default function ListsEditor({ orgSlug, groups, activities, langs }: { or
             <label>Short name<input required value={a.key} onChange={(e) => setA({ ...a, key: e.target.value })} /></label>
             <LangFields label="Activity name" hint="typed once, reused for every event" value={a.name} langs={langs} onChange={(v) => setA({ ...a, name: v })} />
             <label className={styles.check}><input type="checkbox" checked={a.addGroupName} onChange={(e) => setA({ ...a, addGroupName: e.target.checked })} /> Add the group name (e.g. “Johrei Gathering – Calgary Group”)</label>
-            <label className={styles.check}><input type="checkbox" checked={a.isNationalService} onChange={(e) => setA({ ...a, isNationalService: e.target.checked })} /> National service (blue)</label>
+            <label className={styles.check}><input type="checkbox" checked={a.isNationalService} onChange={(e) => setA({ ...a, isNationalService: e.target.checked })} /> Service (blue)</label>
             <div className={styles.actions}>
               <button className="btn primary" disabled={pending}>Save activity</button>
               <button className="btn" type="button" onClick={() => setA(null)}>Cancel</button>
@@ -122,7 +122,7 @@ export default function ListsEditor({ orgSlug, groups, activities, langs }: { or
         ) : (
           <>
             <table className={styles.table}>
-              <thead><tr><th>Activity</th><th>Adds group name</th><th>National</th><th /></tr></thead>
+              <thead><tr><th>Activity</th><th>Adds group name</th><th>Service</th><th /></tr></thead>
               <tbody>
                 {activities.map((x) => (
                   <tr key={x.id}>

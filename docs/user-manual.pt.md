@@ -179,7 +179,7 @@ Clique em **Add an activity** (ou **Edit**):
 - **Short name**: o que os editores veem na lista de atividades.
 - **Activity name** em cada idioma. Você digita uma vez e ele é reutilizado em todos os eventos.
 - **Add the group name**: acrescenta o grupo à linha, por exemplo *"Johrei Gathering – Calgary Group"*.
-- **National service (blue)**: marca os cultos e serviços de toda a organização. Eles ficam em azul, e os
+- **Service (blue)**: marca os cultos e serviços de toda a organização. Eles ficam em azul, e os
   calendários dos centros também podem mostrá-los.
 
 ### 5.2 Calendários (idiomas, logotipo, cabeçalho)
@@ -197,14 +197,14 @@ Clique em **Edit** ao lado de um calendário, ou em **Add a calendar**:
     activities**.
 - **Time zone of this calendar**: o fuso da maioria das atividades (por exemplo Eastern para Boston).
 - **Groups shown**: **All groups** para o calendário nacional. Para o calendário de um centro, desmarque e
-  marque só os grupos desse centro. **Also show national services** acrescenta as atividades nacionais.
+  marque só os grupos desse centro. **Also show services** acrescenta os cultos marcados em azul.
 - **Banner** (cabeçalho): as linhas de título abaixo do logotipo, em cada idioma (o título do mês é
   acrescentado sozinho), o estilo, as cores e o **Logo address** (endereço do logotipo).
   - **Logotipo**: `/izunome-logo.png` é o logotipo Izunome, que já está no aplicativo (o botão **Use it**
     preenche para você). Para outro logotipo, cole o endereço de uma imagem (PNG ou JPG) que esteja na
     internet, por exemplo no site da sua organização. Deixe vazio para não mostrar logotipo.
 - **Open hours box**: o horário de funcionamento do centro em cada idioma. Deixe vazio para esconder a caixa.
-- **Colours and legend**: a cor e o texto da legenda para *National service* (serviço nacional), *Public
+- **Colours and legend**: a cor e o texto da legenda para *Service* (culto), *Public
   venue* (local público) e *Everything else* (o restante).
 
 Clique em **Save calendar** e depois abra um mês com **View / print** para ver o resultado.

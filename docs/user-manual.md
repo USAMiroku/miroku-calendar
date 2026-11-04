@@ -171,8 +171,8 @@ Click **Add an activity** (or **Edit**):
 - **Short name**: what editors see in the Activity list.
 - **Activity name** in each language. You type it once and it is reused for every event.
 - **Add the group name**: adds the group to the line, for example *"Johrei Gathering – Calgary Group"*.
-- **National service (blue)**: marks services for the whole organization. They get the blue colour, and
-  centre calendars can show them too.
+- **Service (blue)**: marks services for the whole organization. They get the blue colour, and centre
+  calendars can show them too.
 
 ### 5.2 Calendars (languages, logo, banner)
 One organization can have several calendars: one for the whole organization and one for each centre.
@@ -190,14 +190,14 @@ Click **Edit** next to a calendar, or **Add a calendar**:
     **Groups & activities** tab.
 - **Time zone of this calendar**: the zone of most of its activities (for example Eastern for Toronto).
 - **Groups shown**: **All groups** for the national calendar. For a centre calendar, untick it and tick
-  only that centre's groups. **Also show national services** adds the national activities.
+  only that centre's groups. **Also show services** adds the services marked in blue.
 - **Banner**: the title lines under the logo, in each language (the month title is added for you), the
   banner style, colours and the **Logo address**.
   - **Logo**: `/izunome-logo.png` is the Izunome logo, already in the app. For another logo, paste the web
     address of a picture (PNG or JPG) that is online, for example from your organization's website. Leave
     it empty to show no logo.
 - **Open hours box**: the centre's opening hours in each language. Leave it empty to hide the box.
-- **Colours and legend**: the colour and legend text for *National service*, *Public venue* and *Everything
+- **Colours and legend**: the colour and legend text for *Service*, *Public venue* and *Everything
   else*.
 
 Click **Save calendar**, then open a month with **View / print** to see the result.
