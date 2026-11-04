@@ -19,6 +19,7 @@ interface Props {
   events: CalendarEvent[];
   publishedCalendarIds: string[];
   langs: Lang[];
+  admin?: boolean;
 }
 
 interface Draft {
@@ -83,9 +84,14 @@ export default function EventEditor(p: Props) {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    const [y, m] = draft.date.split("-").map(Number);
     act(
       () => saveEvent(p.orgSlug, { ...draft, end: draft.end || null }),
-      () => setDraft((d) => ({ ...blank(), date: d.date, groupId: d.groupId, activityId: d.activityId })),
+      () => {
+        setDraft((d) => ({ ...blank(), date: d.date, groupId: d.groupId, activityId: d.activityId }));
+        // Saved in another month: go there, so the new event shows in the list.
+        if (y !== p.year || m !== p.month) router.push(`/${p.orgSlug}/edit?y=${y}&m=${m}`);
+      },
     );
   };
 
@@ -117,6 +123,12 @@ export default function EventEditor(p: Props) {
     <div className={styles.layout}>
       <section className={styles.panel}>
         <h2>{draft.id ? "Edit event" : "Add an event"}</h2>
+        {(!p.groups.some((g) => !g.archived) || !p.activities.some((a) => !a.archived)) && (
+          <p className="notice">
+            First add at least one group and one activity.{" "}
+            {p.admin ? <Link href={`/${p.orgSlug}/admin/lists`}>Open Groups &amp; activities</Link> : "Ask an admin of your organization to add them."}
+          </p>
+        )}
         <form onSubmit={submit} className={styles.form}>
           <label>
             Date

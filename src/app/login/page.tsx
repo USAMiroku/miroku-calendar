@@ -59,7 +59,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
         {sp.error && <p className="notice" style={{ marginTop: 16 }}>{sp.error}</p>}
         <p className="fine">
           Anyone can read the published calendars without signing in. To add or change events, sign in to your
-          organization; the first time, one of its admins approves you.
+          organization; the first time, one of its admins approves you. <Link href="/help">How it works</Link>
         </p>
       </div>
     </main>

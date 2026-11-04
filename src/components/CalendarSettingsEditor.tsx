@@ -159,7 +159,13 @@ export default function CalendarSettingsEditor({ orgSlug, orgName, calendars, gr
                 <option value="plain">Plain with a line</option>
               </select>
             </label>
-            <label>Logo address<input value={s.logoUrl ?? ""} onChange={(e) => setS({ logoUrl: e.target.value })} placeholder="/izunome-logo.png" /></label>
+            <label>Logo address<input value={s.logoUrl ?? ""} onChange={(e) => setS({ logoUrl: e.target.value })} placeholder="/izunome-logo.png" />
+              <small style={{ fontWeight: 400 }}>
+                /izunome-logo.png is the Izunome logo.{" "}
+                {s.logoUrl !== "/izunome-logo.png" && <button type="button" className="linklike" onClick={() => setS({ logoUrl: "/izunome-logo.png" })}>Use it</button>}
+                {" "}For another logo, paste the web address of a picture that is online. Empty = no logo.
+              </small>
+            </label>
             <label>Band colour<input type="color" value={s.bannerColour} onChange={(e) => setS({ bannerColour: e.target.value })} /></label>
             <label>Title colour<input type="color" value={s.titleColour} onChange={(e) => setS({ titleColour: e.target.value })} /></label>
             <label>Table header colour<input type="color" value={s.headerColour} onChange={(e) => setS({ headerColour: e.target.value })} /></label>

@@ -21,6 +21,7 @@ export default async function SiteHeader() {
             {orgs.length === 1 && <Link href={`/${orgs[0].slug}/edit`}>Edit events</Link>}
             {orgs.length > 1 && <Link href="/#workspace">My organizations</Link>}
             {user && orgs.length === 0 && <Link href="/join">Ask to join</Link>}
+            {user && <Link href="/help">Help</Link>}
           </nav>
           <div className="site-user">
             {user ? (
