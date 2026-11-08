@@ -23,7 +23,7 @@ export const toGroup = (r: any): Group => ({
 });
 export const toActivity = (r: any): Activity => ({
   id: r.id, orgId: r.org_id, key: r.key, name: r.name, addGroupName: r.add_group_name,
-  isNationalService: r.is_national_service, lastUsedAt: r.last_used_at, archived: r.archived,
+  isNationalService: r.is_national_service, colour: r.colour ?? null, lastUsedAt: r.last_used_at, archived: r.archived,
 });
 export const toCalendar = (r: any): Calendar => ({
   id: r.id, orgId: r.org_id, slug: r.slug, name: r.name, groupIds: r.group_ids ?? [],

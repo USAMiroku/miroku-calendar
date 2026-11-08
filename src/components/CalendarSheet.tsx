@@ -2,13 +2,15 @@
 // Pure presentation: give it a month's data and it renders the same thing on screen and on paper.
 
 import type { MonthData } from "@/lib/types";
-import { eventsForCalendar, formatMonthTitle, joinDistinct, label, localizedLine } from "@/lib/format";
+import { activityLegend, eventsForCalendar, formatMonthTitle, joinDistinct, label, localizedLine } from "@/lib/format";
 import styles from "./CalendarSheet.module.css";
 
 export default function CalendarSheet({ data }: { data: MonthData }) {
   const s = data.calendar.settings;
   const langs = s.languages;
   const rows = eventsForCalendar(data);
+  const extraLegend = activityLegend(rows, data.activities);
+  const fillStyle = (fill?: string) => (fill ? ({ "--c-fill": fill } as React.CSSProperties) : undefined);
   const openHours = s.openHours ? localizedLine(s.openHours, langs, " / ") : "";
 
   // How many rows each day spans, so the big date number shows once per day.
@@ -72,7 +74,11 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
             const first = !seen.has(r.event.date);
             seen.add(r.event.date);
             return (
-              <tr key={r.event.id} className={`${styles[r.colour]} ${r.event.cancelled ? styles.cancelled : ""}`}>
+              <tr
+                key={r.event.id}
+                className={`${r.fill ? styles.filled : styles[r.colour]} ${r.event.cancelled ? styles.cancelled : ""}`}
+                style={fillStyle(r.fill)}
+              >
                 {first && (
                   <td className={styles.dateCell} rowSpan={daySpan.get(r.event.date)}>
                     {r.dayNumber}
@@ -95,7 +101,7 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
       {/* Phone layout: one card per event instead of the wide table. Hidden on larger screens and on paper. */}
       <ol className={styles.cards}>
         {rows.map((r) => (
-          <li key={r.event.id} className={`${styles.card} ${styles[r.colour]}`}>
+          <li key={r.event.id} className={`${styles.card} ${r.fill ? styles.filled : styles[r.colour]}`} style={fillStyle(r.fill)}>
             <div className={styles.cardDate}>{r.dayNumber}</div>
             <div className={styles.cardBody}>
               {r.event.cancelled && <div className={styles.cancelTag}>{label("cancelled", langs)}</div>}
@@ -118,6 +124,12 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
         {s.legend.map((l) => (
           <span key={l.colour} className={styles.legendItem}>
             <span className={styles.swatch} style={{ background: s.colours[l.colour] }} />
+            {localizedLine(l.label, langs, " / ")}
+          </span>
+        ))}
+        {extraLegend.map((l) => (
+          <span key={l.colour + localizedLine(l.label, langs)} className={styles.legendItem}>
+            <span className={styles.swatch} style={{ background: l.colour }} />
             {localizedLine(l.label, langs, " / ")}
           </span>
         ))}

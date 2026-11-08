@@ -32,7 +32,10 @@ export interface Activity {
   key: string;
   name: Localized;
   addGroupName: boolean;
+  /** A Service: shown in the calendar's Service colour, and on centre calendars that include services. */
   isNationalService: boolean;
+  /** Optional row colour for this activity, e.g. "#FCE4D6". Empty = the usual venue colour. Services always use the Service colour. */
+  colour?: string | null;
   lastUsedAt?: string | null;
   archived?: boolean;
 }
@@ -81,7 +84,7 @@ export interface Calendar {
   name: string;
   /** Limit the calendar to these groups (a centre calendar). Empty = every group in the organization. */
   groupIds: string[];
-  /** For a centre calendar: also show national services from other groups. */
+  /** For a centre calendar: also show services from other groups. */
   includeNational: boolean;
   settings: CalendarSettings;
 }
