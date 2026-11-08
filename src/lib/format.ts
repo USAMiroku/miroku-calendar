@@ -134,6 +134,26 @@ export function colourCategory(activity: Activity, group: Group): ColourCategory
   return "default";
 }
 
+/** The activity's own row colour, if it has one. Services keep the calendar's Service colour. */
+export function activityFill(activity: Activity): string | undefined {
+  if (activity.isNationalService) return undefined;
+  return activity.colour || undefined;
+}
+
+/** Legend entries for the coloured activities that appear this month, in order of first appearance. */
+export function activityLegend(rows: FormattedEvent[], activities: Activity[]): { colour: string; label: Localized }[] {
+  const byId = new Map(activities.map((a) => [a.id, a]));
+  const out: { colour: string; label: Localized }[] = [];
+  const seen = new Set<string>();
+  for (const r of rows) {
+    const a = byId.get(r.event.activityId);
+    if (!a || !r.fill || seen.has(a.id)) continue;
+    seen.add(a.id);
+    out.push({ colour: r.fill, label: a.name });
+  }
+  return out;
+}
+
 /** Join the values for each language, dropping repeats: "DATE", "DAY / JOUR". */
 export function joinDistinct(values: string[], sep: string): string {
   const out: string[] = [];
@@ -164,6 +184,8 @@ export interface FormattedEvent {
   event: CalendarEvent;
   dayNumber: number;
   colour: ColourCategory;
+  /** The activity's own colour, when it has one and isn't a Service. Overrides the category colour. */
+  fill?: string;
   lines: FormattedLine[]; // one per calendar language
 }
 
@@ -173,6 +195,7 @@ export function formatEvent(event: CalendarEvent, group: Group, activity: Activi
     event,
     dayNumber: Number(event.date.slice(8, 10)),
     colour: colourCategory(activity, group),
+    fill: activityFill(activity),
     lines: langs.map((lang) => ({
       lang,
       day: formatDay(lang, event.date),
@@ -189,7 +212,7 @@ export function sortEvents<T extends Pick<CalendarEvent, "date" | "start">>(even
   return [...events].sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
 }
 
-/** The events a calendar shows (its groups, plus national services if asked), sorted and formatted. */
+/** The events a calendar shows (its groups, plus services if asked), sorted and formatted. */
 export function eventsForCalendar(data: Pick<MonthData, "calendar" | "groups" | "activities" | "events">): FormattedEvent[] {
   const { calendar, groups, activities, events } = data;
   const langs = calendar.settings.languages;

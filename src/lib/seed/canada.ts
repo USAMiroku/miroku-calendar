@@ -111,7 +111,7 @@ export const canadaCalendar: Calendar = {
       en: "Toronto Centre – Regular Open Hours / Heures d’ouverture régulières: Mon 3–5 pm · Tue 6–7:30 pm · Thu 6–7 pm · Sat 10–11:30 am",
     },
     legend: [
-      { colour: "national", label: { en: "National Service", fr: "Service national" } },
+      { colour: "national", label: { en: "Service", fr: "Service" } },
       { colour: "public", label: { en: "Regional group gathering", fr: "Rencontre de groupe régionale" } },
       { colour: "default", label: { en: "Member home or centre activity", fr: "Activité au centre ou à domicile" } },
     ],

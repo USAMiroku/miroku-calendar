@@ -8,6 +8,47 @@ import { archiveItem, saveActivity, saveGroup, type ActivityInput, type GroupInp
 import styles from "./Editor.module.css";
 import { TIME_ZONES, timeZoneId, timeZoneLabel } from "@/lib/timeZones";
 
+/** Soft colours that keep black text easy to read on screen and on paper. */
+const PALETTE: { hex: string; name: string }[] = [
+  { hex: "#FFF2CC", name: "Yellow" },
+  { hex: "#FCE4D6", name: "Orange" },
+  { hex: "#F8D7E3", name: "Pink" },
+  { hex: "#E4DFEC", name: "Lavender" },
+  { hex: "#D5F0E8", name: "Mint" },
+  { hex: "#DDEBF7", name: "Sky" },
+  { hex: "#EDEDED", name: "Grey" },
+];
+
+function Swatch({ colour }: { colour?: string | null }) {
+  if (!colour) return <span style={{ color: "var(--muted)" }}>None</span>;
+  return <span title={colour} style={{ display: "inline-block", width: 22, height: 16, background: colour, border: "1px solid #888", borderRadius: 3, verticalAlign: "middle" }} />;
+}
+
+function ColourPicker({ value, onChange }: { value?: string | null; onChange: (c: string | null) => void }) {
+  const v = value?.toUpperCase() ?? null;
+  const box = (selected: boolean): React.CSSProperties => ({
+    width: 30, height: 26, borderRadius: 4, cursor: "pointer", padding: 0,
+    border: selected ? "3px solid #222" : "1px solid #888",
+  });
+  return (
+    <fieldset style={{ border: 0, padding: 0, margin: 0, display: "grid", gap: 6 }}>
+      <legend style={{ fontWeight: 600, marginBottom: 4 }}>
+        Colour on the calendar <small style={{ fontWeight: 400, color: "var(--muted)" }}>(optional, shown in the legend too)</small>
+      </legend>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+        <button type="button" className="btn" aria-pressed={!v} style={{ fontWeight: !v ? 700 : 400 }} onClick={() => onChange(null)}>No colour</button>
+        {PALETTE.map((p) => (
+          <button key={p.hex} type="button" title={p.name} aria-label={p.name} aria-pressed={v === p.hex} style={{ ...box(v === p.hex), background: p.hex }} onClick={() => onChange(p.hex)} />
+        ))}
+        <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 400 }}>
+          Other
+          <input type="color" style={{ width: 40, minHeight: 26, padding: 0 }} value={v ?? "#FFFFFF"} onChange={(e) => onChange(e.target.value)} />
+        </label>
+      </div>
+    </fieldset>
+  );
+}
+
 const VENUES: Record<VenueType, string> = { centre: "Centre", public: "Public venue", home: "Member home" };
 
 function LangFields({ label, value, langs, onChange, hint }: { label: string; value: Localized; langs: Lang[]; onChange: (v: Localized) => void; hint?: string }) {
@@ -42,7 +83,7 @@ export default function ListsEditor({ orgSlug, groups, activities, langs }: { or
     });
 
   const newGroup = (): GroupInput => ({ key: "", name: {}, location: {}, timeZoneLabel: {}, venueType: "public", sortOrder: groups.length });
-  const newActivity = (): ActivityInput => ({ key: "", name: {}, addGroupName: false, isNationalService: false });
+  const newActivity = (): ActivityInput => ({ key: "", name: {}, addGroupName: false, isNationalService: false, colour: null });
 
   return (
     <div className={styles.layout} style={{ gridTemplateColumns: "1fr" }}>
@@ -113,7 +154,8 @@ export default function ListsEditor({ orgSlug, groups, activities, langs }: { or
             <label>Short name<input required value={a.key} onChange={(e) => setA({ ...a, key: e.target.value })} /></label>
             <LangFields label="Activity name" hint="typed once, reused for every event" value={a.name} langs={langs} onChange={(v) => setA({ ...a, name: v })} />
             <label className={styles.check}><input type="checkbox" checked={a.addGroupName} onChange={(e) => setA({ ...a, addGroupName: e.target.checked })} /> Add the group name (e.g. “Johrei Gathering – Calgary Group”)</label>
-            <label className={styles.check}><input type="checkbox" checked={a.isNationalService} onChange={(e) => setA({ ...a, isNationalService: e.target.checked })} /> National service (blue)</label>
+            <label className={styles.check}><input type="checkbox" checked={a.isNationalService} onChange={(e) => setA({ ...a, isNationalService: e.target.checked })} /> Service (uses the calendar&apos;s Service colour, and shows on centre calendars that include services)</label>
+            {!a.isNationalService && <ColourPicker value={a.colour} onChange={(c) => setA({ ...a, colour: c })} />}
             <div className={styles.actions}>
               <button className="btn primary" disabled={pending}>Save activity</button>
               <button className="btn" type="button" onClick={() => setA(null)}>Cancel</button>
@@ -122,13 +164,14 @@ export default function ListsEditor({ orgSlug, groups, activities, langs }: { or
         ) : (
           <>
             <table className={styles.table}>
-              <thead><tr><th>Activity</th><th>Adds group name</th><th>National</th><th /></tr></thead>
+              <thead><tr><th>Activity</th><th>Adds group name</th><th>Service</th><th>Colour</th><th /></tr></thead>
               <tbody>
                 {activities.map((x) => (
                   <tr key={x.id}>
                     <td><strong>{x.key}</strong><br />{langs.map((l) => x.name[l]).filter(Boolean).join(" / ")}</td>
                     <td>{x.addGroupName ? "Yes" : "No"}</td>
                     <td>{x.isNationalService ? "Yes" : "No"}</td>
+                    <td>{x.isNationalService ? <span style={{ color: "var(--muted)" }}>Service colour</span> : <Swatch colour={x.colour} />}</td>
                     <td style={{ whiteSpace: "nowrap" }}>
                       <button className="btn" onClick={() => setA({ ...x })}>Edit</button>{" "}
                       <button className="btn" disabled={pending} onClick={() => confirm(`Remove ${x.key} from the list? Past months keep it.`) && act(() => archiveItem(orgSlug, "activities", x.id), () => {})}>Remove</button>

@@ -134,7 +134,7 @@ export default function CalendarSettingsEditor({ orgSlug, orgName, calendars, gr
               ))}
               <label className={styles.check}>
                 <input type="checkbox" checked={c.includeNational} onChange={(e) => setC({ ...c, includeNational: e.target.checked })} />
-                Also show national services
+                Also show services
               </label>
             </>
           )}
@@ -177,7 +177,7 @@ export default function CalendarSettingsEditor({ orgSlug, orgName, calendars, gr
             <div key={l.colour} style={{ display: "grid", gap: 4 }}>
               <label className={styles.check} style={{ fontWeight: 600 }}>
                 <input type="color" value={s.colours[l.colour]} onChange={(e) => setS({ colours: { ...s.colours, [l.colour]: e.target.value } })} />
-                {l.colour === "national" ? "National service" : l.colour === "public" ? "Public venue" : "Everything else"}
+                {l.colour === "national" ? "Service" : l.colour === "public" ? "Public venue" : "Everything else"}
               </label>
               <LangInputs value={l.label} langs={langs} onChange={(v) => setS({ legend: s.legend.map((x, j) => (j === i ? { ...x, label: v } : x)) })} />
             </div>

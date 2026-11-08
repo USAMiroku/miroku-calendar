@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatActivity, formatDay, formatEvent, formatMonthTitle, formatTime, label, colourCategory, sortEvents } from "./format";
+import { activityFill, formatActivity, formatDay, formatEvent, formatMonthTitle, formatTime, label, colourCategory, sortEvents } from "./format";
 import { canadaSeed } from "./seed/canada";
 
 const g = (key: string) => canadaSeed.groups.find((x) => x.key === key)!;
@@ -84,6 +84,17 @@ describe("activity titles and colours", () => {
     expect(ev.lines[0]).toMatchObject({ day: "Thursday", time: "6 – 8 PM (Mountain Time)" });
     expect(ev.lines[1]).toMatchObject({ day: "Jeudi", time: "18 h à 20 h (heure des Rocheuses)" });
     expect(ev.colour).toBe("public");
+  });
+  it("uses an activity's own colour, but never on a Service", () => {
+    const johrei = { ...a("Johrei Gathering"), colour: "#FFF2CC" };
+    expect(activityFill(johrei)).toBe("#FFF2CC");
+    expect(activityFill(a("Johrei Gathering"))).toBeUndefined();
+    expect(activityFill({ ...a("Monthly Appreciation Service"), colour: "#FFF2CC" })).toBeUndefined();
+    const ev = formatEvent(
+      { id: "1", orgId: "o", date: "2026-12-10", start: "18:00", groupId: g("Calgary").id, activityId: johrei.id },
+      g("Calgary"), johrei, ["en"],
+    );
+    expect(ev.fill).toBe("#FFF2CC");
   });
   it("sorts by date then start", () => {
     const s = sortEvents([

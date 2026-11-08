@@ -182,13 +182,17 @@ export interface ActivityInput {
   name: Localized;
   addGroupName: boolean;
   isNationalService: boolean;
+  colour?: string | null;
 }
+
+/** "#fce4d6" or nothing: anything that isn't a hex colour is stored as no colour. */
+const cleanColour = (c?: string | null) => (c && /^#[0-9a-f]{6}$/i.test(c.trim()) ? c.trim().toUpperCase() : null);
 
 export async function saveActivity(orgSlug: string, a: ActivityInput): Promise<Result> {
   return run(async () => {
     const { sb, orgId } = await orgFor(orgSlug, "admin");
     if (!a.key.trim()) throw new Error("Please give the activity a short name.");
-    const row = { org_id: orgId, key: a.key.trim(), name: clean(a.name), add_group_name: a.addGroupName, is_national_service: a.isNationalService };
+    const row = { org_id: orgId, key: a.key.trim(), name: clean(a.name), add_group_name: a.addGroupName, is_national_service: a.isNationalService, colour: cleanColour(a.colour) };
     const { error } = a.id ? await sb.from("activities").update(row).eq("id", a.id) : await sb.from("activities").insert(row);
     if (error) throw error;
   });
