@@ -1,7 +1,8 @@
 // Builds the calendar feed (an .ics file) that phones and calendar apps subscribe to.
 // Times are written in UTC so every app places them correctly, whatever the group's time zone.
 
-import { eventsForCalendar, LABELS } from "./format";
+import { eventsForCalendar, joinDistinct, LABELS, pick, typography } from "./format";
+import { holidaysBetween } from "./holidays";
 import { ianaZone, timeZoneId } from "./timeZones";
 import type { Activity, Calendar, CalendarEvent, Group } from "./types";
 
@@ -12,6 +13,8 @@ export interface FeedInput {
   events: CalendarEvent[];
   /** Absolute address of the calendar page, e.g. https://miroku-calendar.vercel.app/miroku-canada/canada */
   pageUrl: string;
+  /** Dates to include holidays for: from (included) to (not included), YYYY-MM-DD. No range = no holidays. */
+  holidayRange?: { from: string; to: string };
   now?: Date;
 }
 
@@ -67,7 +70,7 @@ export function foldLine(line: string): string {
   return out.join("\r\n ");
 }
 
-export function buildIcs({ calendar, groups, activities, events, pageUrl, now = new Date() }: FeedInput): string {
+export function buildIcs({ calendar, groups, activities, events, pageUrl, holidayRange, now = new Date() }: FeedInput): string {
   const home = calendar.settings.timeZone;
   const groupById = new Map(groups.map((g) => [g.id, g]));
   const lines: string[] = [
@@ -121,6 +124,26 @@ export function buildIcs({ calendar, groups, activities, events, pageUrl, now = 
       );
     }
     lines.push("END:VEVENT");
+  }
+  // Public holidays as all-day entries that don't mark the person as busy and have no reminder.
+  const hs = calendar.settings.holidays;
+  if (holidayRange && hs && hs.onPhones !== false) {
+    const langs = calendar.settings.languages;
+    for (const h of holidaysBetween(hs, holidayRange.from, holidayRange.to)) {
+      const [y, m, d] = h.date.split("-").map(Number);
+      const next = new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
+      lines.push(
+        "BEGIN:VEVENT",
+        `UID:holiday-${hs.country}-${h.key}-${h.date}@miroku-calendar`,
+        `DTSTAMP:${stamp(now)}`,
+        `DTSTART;VALUE=DATE:${h.date.replace(/-/g, "")}`,
+        `DTEND;VALUE=DATE:${next.replace(/-/g, "")}`,
+        `SUMMARY:${escapeText(joinDistinct(langs.map((l) => typography(pick(h.name, l, langs[0]))), " / "))}`,
+        `DESCRIPTION:${escapeText(joinDistinct(langs.map((l) => LABELS.holiday[l]), " / "))}`,
+        "TRANSP:TRANSPARENT",
+        "END:VEVENT",
+      );
+    }
   }
   lines.push("END:VCALENDAR");
   return lines.map(foldLine).join("\r\n") + "\r\n";

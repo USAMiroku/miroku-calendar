@@ -53,6 +53,8 @@
 .public td:not(.dateCell) { background: var(--c-public); }
 .default td:not(.dateCell) { background: var(--c-default); }
 .filled td:not(.dateCell) { background: var(--c-fill); }
+.holiday td:not(.dateCell) { background: var(--c-holiday); }
+.table .holiday td:last-child { font-size: inherit; }
 
 .primary { font-weight: 700; line-height: 1.25; }
 .secondary { font-style: italic; color: #595959; line-height: 1.25; }
@@ -71,6 +73,7 @@
 .card.national { background: var(--c-national); }
 .card.public { background: var(--c-public); }
 .card.filled { background: var(--c-fill); }
+.card.holiday { background: var(--c-holiday); }
 .cardDate { font-size: 22pt; font-weight: 800; min-width: 38px; text-align: center; line-height: 1; padding-top: 2px; }
 .cardBody { flex: 1; min-width: 0; }
 .cardBody > div + div { margin-top: 3px; }

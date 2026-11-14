@@ -10,6 +10,8 @@ What it does:
   The translations, location, time zone and colour fill in automatically.
 - Admins manage groups, activities, calendars (whole organization or one centre, 1–2 languages each),
   banner, open hours, legend and people, and can import the old Excel "Entries" CSV.
+- Public holidays (Canada, with an optional province, or the USA) appear automatically on each calendar,
+  in its languages, on screen, on paper and on phones. Admins choose them per calendar on the Calendars page.
 - Each month prints on one landscape Letter page and has a read-only link for members once it is published.
 
 ## Run it on your computer

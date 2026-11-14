@@ -125,7 +125,7 @@ export async function getFeedData(orgSlug: string, calSlug: string, today = new 
   const to = monthRange(y + 1, m).to;
 
   if (DEMO_MODE) {
-    return { ...lists, calendar, events: canadaSeed.events.filter((e) => e.date >= from && e.date < to) };
+    return { ...lists, calendar, holidayRange: { from, to }, events: canadaSeed.events.filter((e) => e.date >= from && e.date < to) };
   }
   const sb = await supabaseServer();
   const [ev, pub] = await Promise.all([
@@ -136,5 +136,5 @@ export async function getFeedData(orgSlug: string, calSlug: string, today = new 
   // Only months this calendar has published, so drafts never reach anyone's phone.
   const published = new Set((pub.data ?? []).map((p) => `${p.year}-${pad(p.month)}`));
   const events = (ev.data ?? []).map(toEvent).filter((e) => published.has(e.date.slice(0, 7)));
-  return { ...lists, calendar, events };
+  return { ...lists, calendar, events, holidayRange: { from, to } };
 }
