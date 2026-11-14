@@ -44,8 +44,11 @@ describe("Portuguese and Spanish times", () => {
 
 describe("days and month title", () => {
   it("day names", () => {
-    expect(formatDay("en", "2026-12-06")).toBe("Sunday");
-    expect(formatDay("fr", "2026-12-06")).toBe("Dimanche");
+    expect(formatDay("en", "2026-12-06")).toBe("Sun");
+    expect(formatDay("fr", "2026-12-06")).toBe("Dim");
+    expect(formatDay("en", "2026-12-09")).toBe("Wed");
+    expect(formatDay("pt", "2026-12-09")).toBe("Qua");
+    expect(formatDay("es", "2026-12-09")).toBe("Mié");
   });
   it("month title", () => {
     expect(formatMonthTitle(["en", "fr"], 2026, 12)).toBe("DECEMBER 2026 | DÉCEMBRE 2026");
@@ -81,8 +84,8 @@ describe("activity titles and colours", () => {
       a("Johrei Gathering"),
       ["en", "fr"],
     );
-    expect(ev.lines[0]).toMatchObject({ day: "Thursday", time: "6 – 8 PM (Mountain Time)" });
-    expect(ev.lines[1]).toMatchObject({ day: "Jeudi", time: "18 h à 20 h (heure des Rocheuses)" });
+    expect(ev.lines[0]).toMatchObject({ day: "Thu", time: "6 – 8 PM (Mountain Time)" });
+    expect(ev.lines[1]).toMatchObject({ day: "Jeu", time: "18 h à 20 h (heure des Rocheuses)" });
     expect(ev.colour).toBe("public");
   });
   it("uses an activity's own colour, but never on a Service", () => {

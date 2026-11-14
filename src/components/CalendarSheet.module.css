@@ -42,7 +42,7 @@
 }
 .table td { border: 1px solid #b7b7b7; padding: 3px 6px; vertical-align: middle; }
 .colDate { width: 6%; }
-.colDay { width: 10%; }
+.colDay { width: 8%; }
 .colTime { width: 15%; }
 .colLoc { width: 37%; }
 .table td:last-child { font-size: 9pt; }
