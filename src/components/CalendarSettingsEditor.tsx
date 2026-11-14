@@ -3,10 +3,11 @@
 import { DEFAULT_HOME_ZONE, TIME_ZONES } from "@/lib/timeZones";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { BannerStyle, Calendar, Group, Lang, Localized } from "@/lib/types";
+import type { BannerStyle, Calendar, Group, HolidaySettings, Lang, Localized } from "@/lib/types";
 import { LANG_NAMES } from "@/lib/format";
 import { saveCalendar, type CalendarInput, type Result } from "@/lib/actions";
 import { canadaCalendar } from "@/lib/seed/canada";
+import { DEFAULT_HOLIDAY_COLOUR, HOLIDAY_COUNTRIES, HOLIDAY_REGIONS } from "@/lib/holidays";
 import styles from "./Editor.module.css";
 
 const ALL_LANGS = Object.keys(LANG_NAMES) as Lang[];
@@ -39,7 +40,14 @@ export default function CalendarSettingsEditor({ orgSlug, orgName, calendars, gr
     name: "",
     groupIds: [],
     includeNational: true,
-    settings: { ...canadaCalendar.settings, languages: ["en"], titleLines: [{ en: orgName }], openHours: {} },
+    settings: {
+      ...canadaCalendar.settings,
+      languages: ["en"],
+      titleLines: [{ en: orgName }],
+      openHours: {},
+      // Same holidays as the organization's other calendars.
+      holidays: calendars[0]?.settings.holidays ?? null,
+    },
   });
 
   if (!c) {
@@ -48,13 +56,14 @@ export default function CalendarSettingsEditor({ orgSlug, orgName, calendars, gr
         <h2>Calendars</h2>
         <p>Each calendar has its own languages, banner and open hours. A centre calendar shows only that centre’s groups.</p>
         <table className={styles.table}>
-          <thead><tr><th>Calendar</th><th>Languages</th><th>Shows</th><th /></tr></thead>
+          <thead><tr><th>Calendar</th><th>Languages</th><th>Shows</th><th>Holidays</th><th /></tr></thead>
           <tbody>
             {calendars.map((x) => (
               <tr key={x.id}>
                 <td><strong>{x.name}</strong><br /><small>/{orgSlug}/{x.slug}</small></td>
                 <td>{x.settings.languages.map((l) => LANG_NAMES[l]).join(" + ")}</td>
                 <td>{x.groupIds.length === 0 ? "All groups" : groups.filter((g) => x.groupIds.includes(g.id)).map((g) => g.key).join(", ")}</td>
+                <td>{holidaySummary(x.settings.holidays)}</td>
                 <td><button className="btn" onClick={() => setC({ ...x, settings: structuredClone(x.settings) })}>Edit</button></td>
               </tr>
             ))}
@@ -172,6 +181,42 @@ export default function CalendarSettingsEditor({ orgSlug, orgName, calendars, gr
         </fieldset>
 
         <fieldset className={styles.panel}>
+          <legend>Public holidays</legend>
+          <div className={styles.grid2}>
+            <label>Show the holidays of
+              <select
+                value={s.holidays?.country ?? ""}
+                onChange={(e) => setS({ holidays: e.target.value ? { colour: DEFAULT_HOLIDAY_COLOUR, ...s.holidays, country: e.target.value as HolidaySettings["country"], region: "" } : null })}
+              >
+                <option value="">No holidays</option>
+                {HOLIDAY_COUNTRIES.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
+              </select>
+            </label>
+            {s.holidays && HOLIDAY_REGIONS[s.holidays.country].length > 0 && (
+              <label>Also add a province’s holidays
+                <select value={s.holidays.region ?? ""} onChange={(e) => setS({ holidays: { ...s.holidays!, region: e.target.value } })}>
+                  <option value="">No, nationwide only</option>
+                  {HOLIDAY_REGIONS[s.holidays.country].map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+                </select>
+              </label>
+            )}
+          </div>
+          {s.holidays && (
+            <>
+              <label className={styles.check}>
+                <input type="color" value={s.holidays.colour || DEFAULT_HOLIDAY_COLOUR} onChange={(e) => setS({ holidays: { ...s.holidays!, colour: e.target.value } })} />
+                Holiday row colour
+              </label>
+              <label className={styles.check}>
+                <input type="checkbox" checked={s.holidays.onPhones !== false} onChange={(e) => setS({ holidays: { ...s.holidays!, onPhones: e.target.checked } })} />
+                Also show holidays on phones that added this calendar
+              </label>
+            </>
+          )}
+          <small>Holidays appear automatically every year, in the calendar’s languages. Nothing to type.</small>
+        </fieldset>
+
+        <fieldset className={styles.panel}>
           <legend>Colours and legend</legend>
           {s.legend.map((l, i) => (
             <div key={l.colour} style={{ display: "grid", gap: 4 }}>
@@ -192,4 +237,11 @@ export default function CalendarSettingsEditor({ orgSlug, orgName, calendars, gr
       </form>
     </section>
   );
+}
+
+function holidaySummary(h: HolidaySettings | null | undefined): string {
+  if (!h?.country) return "None";
+  const country = HOLIDAY_COUNTRIES.find((x) => x.id === h.country)?.label ?? h.country;
+  const region = HOLIDAY_REGIONS[h.country]?.find((r) => r.id === h.region)?.label;
+  return region ? `${country} + ${region}` : country;
 }

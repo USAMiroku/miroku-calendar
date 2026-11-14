@@ -34,6 +34,7 @@ export const LABELS: Record<string, Record<Lang, string>> = {
   calendar: { en: "ACTIVITIES CALENDAR", fr: "CALENDRIER DES ACTIVITÉS", pt: "CALENDÁRIO DE ATIVIDADES", es: "CALENDARIO DE ACTIVIDADES" },
   noEvents: { en: "No activities scheduled", fr: "Aucune activité prévue", pt: "Nenhuma atividade programada", es: "No hay actividades programadas" },
   cancelled: { en: "CANCELLED", fr: "ANNULÉ", pt: "CANCELADO", es: "CANCELADO" },
+  holiday: { en: "Public holiday", fr: "Jour férié", pt: "Feriado", es: "Día festivo" },
 };
 
 /** Curly apostrophes and en dashes, as the printed calendar uses. */

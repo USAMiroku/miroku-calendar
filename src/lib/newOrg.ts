@@ -33,6 +33,7 @@ export function newOrgSettings(name: string, languages: [Lang] | [Lang, Lang]): 
     languages,
     titleLines: [{ [langs[0]]: name }, pick(TITLE, langs)],
     openHours: {},
+    holidays: null, // chosen on the Calendars page (Canada, USA...)
     legend: [
       { colour: "national", label: pick(SERVICE, langs) },
       { colour: "public", label: pick(REGIONAL, langs) },

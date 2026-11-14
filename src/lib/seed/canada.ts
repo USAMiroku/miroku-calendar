@@ -116,6 +116,7 @@ export const canadaCalendar: Calendar = {
       { colour: "default", label: { en: "Member home or centre activity", fr: "Activité au centre ou à domicile" } },
     ],
     colours: { national: "#D9E1F2", public: "#E2EFDA", default: "#FFFFFF" },
+    holidays: { country: "CA", region: "ON" },
   },
 };
 

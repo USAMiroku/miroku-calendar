@@ -59,6 +59,17 @@ export interface LegendEntry {
   label: Localized;
 }
 
+export interface HolidaySettings {
+  /** Which country's public holidays to show. */
+  country: "CA" | "US";
+  /** Optional province (e.g. "ON", "QC") to add its own holidays. Empty = nationwide holidays only. */
+  region?: string;
+  /** Row colour for holidays, e.g. "#FFF2CC". */
+  colour?: string;
+  /** Also send holidays to phones that subscribed to the calendar. Default yes. */
+  onPhones?: boolean;
+}
+
 export interface CalendarSettings {
   /** One or two languages. The first is the bold line, the second the grey italic line. */
   languages: [Lang] | [Lang, Lang];
@@ -75,6 +86,8 @@ export interface CalendarSettings {
   colours: { national: string; public: string; default: string };
   /** Where the calendar's times are, as a time zone id from timeZones.ts (e.g. "eastern"). Used by phone calendars. */
   timeZone?: string;
+  /** Public holidays to show. Missing or null = no holidays. */
+  holidays?: HolidaySettings | null;
 }
 
 export interface Calendar {
