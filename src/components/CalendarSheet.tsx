@@ -93,7 +93,7 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
               return (
                 <tr key={`h-${it.holiday.key}`} className={styles.holiday}>
                   {dateCell}
-                  <Cell lines={langs.map((l) => formatDay(l, it.date))} />
+                  <Cell lines={langs.map((l) => formatDay(l, it.date))} className={styles.dayCell} />
                   <Cell lines={holidayName(it.holiday)} colSpan={3} />
                 </tr>
               );
@@ -106,7 +106,7 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
                 style={fillStyle(r.fill)}
               >
                 {dateCell}
-                <Cell lines={r.lines.map((l) => l.day)} />
+                <Cell lines={r.lines.map((l) => l.day)} className={styles.dayCell} />
                 <Cell lines={r.lines.map((l) => l.time)} />
                 <Cell
                   lines={r.lines.map((l) => l.activity)}
@@ -185,10 +185,10 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
 }
 
 /** One cell: first language bold, second italic grey. Identical lines are shown once. */
-function Cell({ lines, extra, prefix, colSpan }: { lines: string[]; extra?: string[]; prefix?: string; colSpan?: number }) {
+function Cell({ lines, extra, prefix, colSpan, className }: { lines: string[]; extra?: string[]; prefix?: string; colSpan?: number; className?: string }) {
   const show = lines.length === 2 && lines[0] === lines[1] ? [lines[0]] : lines;
   return (
-    <td colSpan={colSpan}>
+    <td colSpan={colSpan} className={className}>
       {prefix && <div className={styles.cancelTag}>{prefix}</div>}
       {show.map((t, i) => (
         <div key={i} className={i === 0 ? styles.primary : styles.secondary}>
