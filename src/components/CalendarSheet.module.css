@@ -46,7 +46,9 @@
 .colTime { width: 15%; }
 .colLoc { width: 37%; }
 .table td:last-child { font-size: 9pt; }
-.table th.colDate { text-align: center; }
+.table th.colDate, .table th.colDay { text-align: center; }
+/* Day names sit in the middle of their cell, across and up/down. */
+.table td.dayCell { text-align: center; vertical-align: middle; white-space: nowrap; }
 .dateCell { text-align: center; font-size: 22pt; font-weight: 800; background: #fff; color: #222; }
 
 .national td:not(.dateCell) { background: var(--c-national); }
@@ -74,7 +76,7 @@
 .card.public { background: var(--c-public); }
 .card.filled { background: var(--c-fill); }
 .card.holiday { background: var(--c-holiday); }
-.cardDate { font-size: 22pt; font-weight: 800; min-width: 38px; text-align: center; line-height: 1; padding-top: 2px; }
+.cardDate { font-size: 22pt; font-weight: 800; min-width: 38px; text-align: center; line-height: 1; align-self: center; }
 .cardBody { flex: 1; min-width: 0; }
 .cardBody > div + div { margin-top: 3px; }
 .cardLoc { font-size: 9pt; color: #444; }
