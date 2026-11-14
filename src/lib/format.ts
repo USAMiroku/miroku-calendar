@@ -10,11 +10,12 @@ export const LANG_NAMES: Record<Lang, string> = {
   es: "Español",
 };
 
+// Short weekday names, so the DAY column stays on one line (also in "Wed / Mer").
 const DAY_NAMES: Record<Lang, string[]> = {
-  en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-  fr: ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"],
-  pt: ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"],
-  es: ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"],
+  en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  fr: ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"],
+  pt: ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"],
+  es: ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"],
 };
 
 const MONTH_NAMES: Record<Lang, string[]> = {
@@ -104,7 +105,7 @@ export function formatTime(lang: Lang, start: string, end?: string | null, timeZ
   return timeZone ? `${text} (${timeZone})` : text;
 }
 
-/** Day of week for a YYYY-MM-DD date, capitalised. */
+/** Short day of week for a YYYY-MM-DD date, capitalised: "Wed", "Qua". */
 export function formatDay(lang: Lang, date: string): string {
   const [y, m, d] = date.split("-").map(Number);
   const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
