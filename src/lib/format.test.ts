@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activityFill, formatActivity, formatDay, formatEvent, formatMonthTitle, formatTime, label, colourCategory, sortEvents } from "./format";
+import { activityFill, formatActivity, formatDay, formatEvent, formatMonthTitle, formatTime, label, colourCategory, sortEvents, dateRange, formatEventTime, isPeriod } from "./format";
 import { canadaSeed } from "./seed/canada";
 
 const g = (key: string) => canadaSeed.groups.find((x) => x.key === key)!;
@@ -106,5 +106,29 @@ describe("activity titles and colours", () => {
       { date: "2026-12-01", start: "09:30" },
     ]);
     expect(s.map((e) => e.date + " " + e.start)).toEqual(["2026-12-01 09:30", "2026-12-01 19:00", "2026-12-02 18:00"]);
+  });
+});
+
+describe("all-day events and periods", () => {
+  const base = { id: "x", orgId: "o", groupId: "g", activityId: "a" };
+  it("shows All day in every language", () => {
+    const e = { ...base, date: "2026-12-24", allDay: true, start: "" };
+    expect(formatEventTime("en", e)).toBe("All day");
+    expect(formatEventTime("fr", e)).toBe("Toute la journée");
+    expect(formatEventTime("pt", e)).toBe("O dia todo");
+    expect(formatEventTime("es", e)).toBe("Todo el día");
+  });
+  it("shows the times only on the first and last day of a timed period", () => {
+    const e = { ...base, date: "2026-12-04", endDate: "2026-12-06", start: "19:00", end: "13:00" };
+    expect(formatEventTime("en", e)).toBe("Fri 7 PM – Sun 1 PM");
+    expect(formatEventTime("fr", e)).toBe("Ven 19 h à Dim 13 h");
+    expect(formatEventTime("pt", e)).toBe("Sex 19h às Dom 13h");
+  });
+  it("gives a period's date range, with the month when it ends in another month", () => {
+    expect(dateRange("en", { date: "2026-12-24", endDate: "2026-12-31" })).toEqual({ first: 24, last: "31" });
+    expect(dateRange("en", { date: "2026-12-28", endDate: "2027-01-04" })).toEqual({ first: 28, last: "4 Jan" });
+    expect(dateRange("fr", { date: "2026-12-28", endDate: "2027-02-04" })).toEqual({ first: 28, last: "4 Fév." });
+    expect(dateRange("en", { date: "2026-12-24", endDate: null })).toEqual({ first: 24 });
+    expect(isPeriod({ date: "2026-12-24", endDate: "2026-12-24" })).toBe(false);
   });
 });

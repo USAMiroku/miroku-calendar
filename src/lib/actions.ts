@@ -10,6 +10,17 @@ import type { CalendarSettings, Lang, Localized, VenueType } from "./types";
 import { newOrgSettings, RESERVED_SLUGS } from "./newOrg";
 import { planCopy } from "./copyMonth";
 import { monthRange } from "./data";
+import { addDays } from "./ics";
+
+/** Whole days from one YYYY-MM-DD date to another. */
+const daysBetween = (a: string, b: string) => Math.round((Date.parse(b + "T00:00:00Z") - Date.parse(a + "T00:00:00Z")) / 86400000);
+
+/** A clearer message when the database hasn't had the all-day/period SQL run yet. */
+function explain(error: { message?: string }): Error {
+  if (/all_day|end_date|closed/.test(error.message ?? ""))
+    return new Error("The database needs the all-day and period update first. Ask an admin to run all-day-and-periods.sql in Supabase.");
+  return new Error(error.message);
+}
 
 export type Result = { ok: true; message?: string } | { ok: false; error: string };
 
@@ -43,12 +54,17 @@ const clean = (l: Localized | undefined): Localized =>
 export interface EventInput {
   id?: string;
   date: string;
+  /** Last day of a period. Empty or the same as date = a one-day event. */
+  endDate?: string | null;
+  allDay?: boolean;
   start: string;
   end?: string | null;
   groupId: string;
   activityId: string;
   note?: Localized;
   cancelled?: boolean;
+  /** Shade it in the holiday colour (a holiday break, the centre is closed). */
+  closed?: boolean;
   /** Also create the same event on the same weekday for the rest of the month. */
   repeatWeekly?: boolean;
 }
@@ -67,26 +83,35 @@ function weeklyDates(date: string): string[] {
 export async function saveEvent(orgSlug: string, input: EventInput): Promise<Result> {
   return run(async () => {
     const { sb, orgId } = await orgFor(orgSlug, "editor");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date) || !/^\d{2}:\d{2}$/.test(input.start)) throw new Error("Please give a date and a start time.");
-    if (input.end && input.end <= input.start) throw new Error("The end time must be after the start time.");
+    const allDay = !!input.allDay;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) throw new Error("Please give a date.");
+    if (!allDay && !/^\d{2}:\d{2}$/.test(input.start ?? "")) throw new Error("Please give a start time, or tick All day.");
+    const endDate = input.endDate && input.endDate !== input.date ? input.endDate : null;
+    if (endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) throw new Error("Please check the end date.");
+    if (endDate && endDate < input.date) throw new Error("The end date can't be before the start date.");
+    if (!allDay && !endDate && input.end && input.end <= input.start) throw new Error("The end time must be after the start time.");
+    const span = endDate ? daysBetween(input.date, endDate) : 0;
     const { data: u } = await sb.auth.getUser();
     const row = {
       org_id: orgId,
-      start_time: input.start,
-      end_time: input.end || null,
+      all_day: allDay,
+      start_time: allDay ? null : input.start,
+      end_time: allDay ? null : input.end || null,
       group_id: input.groupId,
       activity_id: input.activityId,
       note: clean(input.note),
       cancelled: !!input.cancelled,
+      closed: !!input.closed,
       updated_at: new Date().toISOString(),
     };
+    const forDate = (date: string) => ({ ...row, date, end_date: span ? addDays(date, span) : null });
     if (input.id) {
-      const { error } = await sb.from("events").update({ ...row, date: input.date }).eq("id", input.id).eq("org_id", orgId);
-      if (error) throw error;
+      const { error } = await sb.from("events").update(forDate(input.date)).eq("id", input.id).eq("org_id", orgId);
+      if (error) throw explain(error);
     } else {
-      const dates = input.repeatWeekly ? weeklyDates(input.date) : [input.date];
-      const { error } = await sb.from("events").insert(dates.map((date) => ({ ...row, date, created_by: u.user?.id })));
-      if (error) throw error;
+      const dates = input.repeatWeekly && !span ? weeklyDates(input.date) : [input.date];
+      const { error } = await sb.from("events").insert(dates.map((date) => ({ ...forDate(date), created_by: u.user?.id })));
+      if (error) throw explain(error);
     }
     await sb.from("activities").update({ last_used_at: new Date().toISOString() }).eq("id", input.activityId);
     return { ok: true, message: "Saved." };
@@ -116,18 +141,23 @@ export async function copyMonth(orgSlug: string, fromYear: number, fromMonth: nu
     if (b.error) throw b.error;
     if (!a.data?.length) throw new Error("That month has no events to copy.");
     const key = (date: string, start: string, g: string, act: string) => [date, start.slice(0, 5), g, act].join("|");
-    const existing = new Set((b.data ?? []).map((e) => key(e.date, String(e.start_time), e.group_id, e.activity_id)));
+    const existing = new Set((b.data ?? []).map((e) => key(e.date, String(e.start_time ?? ""), e.group_id, e.activity_id)));
     const plan = planCopy(
-      a.data.map((e) => ({ ...e, start: String(e.start_time).slice(0, 5), end: e.end_time, groupId: e.group_id, activityId: e.activity_id })),
+      a.data.map((e) => ({ ...e, original_date: e.date as string, start: e.start_time ? String(e.start_time).slice(0, 5) : "", end: e.end_time, groupId: e.group_id, activityId: e.activity_id })),
       toYear,
       toMonth,
     );
     const rows = plan
       .filter((e) => !existing.has(key(e.date, e.start, e.groupId, e.activityId)))
-      .map((e) => ({
-        org_id: orgId, date: e.date, start_time: e.start_time, end_time: e.end_time,
-        group_id: e.group_id, activity_id: e.activity_id, note: e.note, cancelled: false,
-      }));
+      .map((e) => {
+        // A period keeps its length: a 3-day retreat stays 3 days.
+        const span = e.end_date && e.end_date > e.original_date ? daysBetween(e.original_date, e.end_date) : 0;
+        return {
+          org_id: orgId, date: e.date, start_time: e.start_time, end_time: e.end_time,
+          group_id: e.group_id, activity_id: e.activity_id, note: e.note, cancelled: false,
+          ...(e.all_day || span || e.closed ? { all_day: !!e.all_day, end_date: span ? addDays(e.date, span) : null, closed: !!e.closed } : {}),
+        };
+      });
     if (rows.length) {
       const { error } = await sb.from("events").insert(rows);
       if (error) throw error;
