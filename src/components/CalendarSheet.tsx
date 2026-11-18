@@ -2,7 +2,7 @@
 // Pure presentation: give it a month's data and it renders the same thing on screen and on paper.
 
 import type { MonthData } from "@/lib/types";
-import { activityLegend, eventsForCalendar, formatDay, formatMonthTitle, joinDistinct, label, localizedLine, pick, typography, type FormattedEvent } from "@/lib/format";
+import { activityLegend, dateRange, eventsForCalendar, formatDay, isPeriod, formatMonthTitle, joinDistinct, label, localizedLine, pick, typography, type FormattedEvent } from "@/lib/format";
 import { DEFAULT_HOLIDAY_COLOUR, holidaysInMonth, type Holiday } from "@/lib/holidays";
 import styles from "./CalendarSheet.module.css";
 
@@ -15,18 +15,43 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
   const openHours = s.openHours ? localizedLine(s.openHours, langs, " / ") : "";
   const holidays = holidaysInMonth(s.holidays, data.year, data.month);
 
-  // Holidays and events in date order; a holiday comes first on its day.
-  type Item = { kind: "holiday"; date: string; holiday: Holiday } | { kind: "event"; date: string; row: FormattedEvent };
+  // Holidays and events in date order: on each day, holidays first, then periods, then the day's events.
+  // A period that started last month is listed on the 1st. Each period gets its own date cell showing its range.
+  const monthStart = `${data.year}-${String(data.month).padStart(2, "0")}-01`;
+  type Item =
+    | { kind: "holiday"; date: string; key: string; rank: number; holiday: Holiday }
+    | { kind: "event"; date: string; key: string; rank: number; row: FormattedEvent };
   const items: Item[] = [
-    ...holidays.map((h) => ({ kind: "holiday" as const, date: h.date, holiday: h })),
-    ...rows.map((r) => ({ kind: "event" as const, date: r.event.date, row: r })),
-  ].sort((a, b) => a.date.localeCompare(b.date) || (a.kind === b.kind ? 0 : a.kind === "holiday" ? -1 : 1));
+    ...holidays.map((h) => ({ kind: "holiday" as const, date: h.date, key: h.date, rank: 0, holiday: h })),
+    ...rows.map((r) => {
+      const date = r.event.date < monthStart ? monthStart : r.event.date;
+      const period = isPeriod(r.event);
+      return { kind: "event" as const, date, key: period ? `p-${r.event.id}` : date, rank: period ? 1 : 2, row: r };
+    }),
+  ].sort((a, b) => a.date.localeCompare(b.date) || a.rank - b.rank);
   const holidayName = (h: Holiday) => langs.map((l) => typography(pick(h.name, l, langs[0])));
+  const anyClosed = rows.some((r) => r.event.closed);
+  const rowClass = (r: FormattedEvent) =>
+    r.event.closed ? styles.closedRow : r.fill ? styles.filled : styles[r.colour];
 
-  // How many rows each day spans, so the big date number shows once per day.
+  // How many rows each date cell spans, so the big date number shows once per day.
   const daySpan = new Map<string, number>();
-  for (const it of items) daySpan.set(it.date, (daySpan.get(it.date) ?? 0) + 1);
+  for (const it of items) daySpan.set(it.key, (daySpan.get(it.key) ?? 0) + 1);
   const seen = new Set<string>();
+
+  /** The big date number, or "24 → 31" for a period. */
+  const dateNum = (it: Item) => {
+    if (it.kind === "event" && isPeriod(it.row.event)) {
+      const r = dateRange(langs[0], it.row.event);
+      return (
+        <span className={styles.range}>
+          {r.first}
+          <span className={styles.rangeTo}>– {r.last}</span>
+        </span>
+      );
+    }
+    return Number(it.date.slice(8, 10));
+  };
 
   const bannerClass =
     s.bannerStyle === "side-bands" ? styles.sideBands : s.bannerStyle === "top-band" ? styles.topBand : styles.plainBanner;
@@ -82,11 +107,11 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
             </tr>
           )}
           {items.map((it) => {
-            const first = !seen.has(it.date);
-            seen.add(it.date);
+            const first = !seen.has(it.key);
+            seen.add(it.key);
             const dateCell = first && (
-              <td className={styles.dateCell} rowSpan={daySpan.get(it.date)}>
-                {Number(it.date.slice(8, 10))}
+              <td className={styles.dateCell} rowSpan={daySpan.get(it.key)}>
+                {dateNum(it)}
               </td>
             );
             if (it.kind === "holiday") {
@@ -102,7 +127,7 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
             return (
               <tr
                 key={r.event.id}
-                className={`${r.fill ? styles.filled : styles[r.colour]} ${r.event.cancelled ? styles.cancelled : ""}`}
+                className={`${rowClass(r)} ${r.event.cancelled ? styles.cancelled : ""}`}
                 style={fillStyle(r.fill)}
               >
                 {dateCell}
@@ -140,8 +165,8 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
           }
           const r = it.row;
           return (
-          <li key={r.event.id} className={`${styles.card} ${r.fill ? styles.filled : styles[r.colour]}`} style={fillStyle(r.fill)}>
-            <div className={styles.cardDate}>{r.dayNumber}</div>
+          <li key={r.event.id} className={`${styles.card} ${rowClass(r)}`} style={fillStyle(r.fill)}>
+            <div className={styles.cardDate}>{dateNum(it)}</div>
             <div className={styles.cardBody}>
               {r.event.cancelled && <div className={styles.cancelTag}>{label("cancelled", langs)}</div>}
               {r.lines.map((l, i) => (
@@ -171,6 +196,12 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
           <span className={styles.legendItem}>
             <span className={styles.swatch} style={{ background: "var(--c-holiday)" }} />
             {label("holiday", langs)}
+          </span>
+        )}
+        {anyClosed && (
+          <span className={styles.legendItem}>
+            <span className={styles.swatch} style={{ background: "var(--c-holiday)" }} />
+            {label("closed", langs)}
           </span>
         )}
         {extraLegend.map((l) => (

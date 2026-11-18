@@ -48,12 +48,15 @@
 .table td:last-child { font-size: 9pt; }
 .table th.colDate { text-align: center; }
 .dateCell { text-align: center; font-size: 22pt; font-weight: 800; background: #fff; color: #222; }
+/* A period's date cell: "24" with "– 31" under it. */
+.range { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; }
+.rangeTo { font-size: 11pt; font-weight: 700; white-space: nowrap; margin-top: 2px; }
 
 .national td:not(.dateCell) { background: var(--c-national); }
 .public td:not(.dateCell) { background: var(--c-public); }
 .default td:not(.dateCell) { background: var(--c-default); }
 .filled td:not(.dateCell) { background: var(--c-fill); }
-.holiday td:not(.dateCell) { background: var(--c-holiday); }
+.holiday td:not(.dateCell), .closedRow td:not(.dateCell) { background: var(--c-holiday); }
 .table .holiday td:last-child { font-size: inherit; }
 
 .primary { font-weight: 700; line-height: 1.25; }
@@ -73,7 +76,7 @@
 .card.national { background: var(--c-national); }
 .card.public { background: var(--c-public); }
 .card.filled { background: var(--c-fill); }
-.card.holiday { background: var(--c-holiday); }
+.card.holiday, .card.closedRow { background: var(--c-holiday); }
 .cardDate { font-size: 22pt; font-weight: 800; min-width: 38px; text-align: center; line-height: 1; padding-top: 2px; }
 .cardBody { flex: 1; min-width: 0; }
 .cardBody > div + div { margin-top: 3px; }

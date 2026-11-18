@@ -43,3 +43,26 @@ describe("calendar feed", () => {
     expect(ics.trimEnd().endsWith("END:VCALENDAR")).toBe(true);
   });
 });
+
+describe("all-day events and periods in the feed", () => {
+  const calendar = canadaSeed.calendars.find((c) => c.slug === "canada")!;
+  const activity = canadaSeed.activities[0];
+  const group = canadaSeed.groups[0];
+  const feed = (events: CalendarEvent[]) =>
+    buildIcs({ ...canadaSeed, calendar, events, pageUrl: "https://x.test/c", now: new Date("2026-11-01T00:00:00Z") });
+
+  it("writes an all-day period as dates, ending the day after the last day, with no reminder", () => {
+    const ics = feed([{ id: "b", orgId: calendar.orgId, date: "2026-12-24", endDate: "2027-01-02", allDay: true, start: "", groupId: group.id, activityId: activity.id, closed: true }]);
+    expect(ics).toContain("DTSTART;VALUE=DATE:20261224");
+    expect(ics).toContain("DTEND;VALUE=DATE:20270103");
+    expect(ics).toContain("TRANSP:TRANSPARENT");
+    expect(ics).not.toContain("BEGIN:VALARM");
+  });
+
+  it("writes a timed period from the first day's start to the last day's end", () => {
+    const ics = feed([{ id: "r", orgId: calendar.orgId, date: "2026-12-04", endDate: "2026-12-06", start: "19:00", end: "13:00", groupId: group.id, activityId: activity.id }]);
+    expect(ics).toContain("DTSTART:20261205T000000Z"); // Fri 7 PM Eastern
+    expect(ics).toContain("DTEND:20261206T180000Z"); // Sun 1 PM Eastern
+    expect(ics).toContain("BEGIN:VALARM");
+  });
+});

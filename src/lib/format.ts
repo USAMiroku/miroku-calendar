@@ -36,7 +36,12 @@ export const LABELS: Record<string, Record<Lang, string>> = {
   noEvents: { en: "No activities scheduled", fr: "Aucune activité prévue", pt: "Nenhuma atividade programada", es: "No hay actividades programadas" },
   cancelled: { en: "CANCELLED", fr: "ANNULÉ", pt: "CANCELADO", es: "CANCELADO" },
   holiday: { en: "Public holiday", fr: "Jour férié", pt: "Feriado", es: "Día festivo" },
+  allDay: { en: "All day", fr: "Toute la journée", pt: "O dia todo", es: "Todo el día" },
+  closed: { en: "Closed", fr: "Fermé", pt: "Fechado", es: "Cerrado" },
 };
+
+/** Joins the first and last day of a period: "Fri 7 PM – Sun 1 PM", "ven 19 h à dim 13 h". */
+const RANGE_SEP: Record<Lang, string> = { en: " – ", es: " – ", fr: " à ", pt: " às " };
 
 /** Curly apostrophes and en dashes, as the printed calendar uses. */
 export function typography(text: string): string {
@@ -105,6 +110,19 @@ export function formatTime(lang: Lang, start: string, end?: string | null, timeZ
   return timeZone ? `${text} (${timeZone})` : text;
 }
 
+/** The time cell for any event: "All day", a normal time, or, for a timed period, the times on its first and last day. */
+export function formatEventTime(lang: Lang, e: Pick<CalendarEvent, "date" | "endDate" | "allDay" | "start" | "end">, timeZone?: string): string {
+  if (e.allDay || !e.start) return LABELS.allDay[lang];
+  if (!e.endDate || e.endDate === e.date) return formatTime(lang, e.start, e.end, timeZone);
+  const first = `${formatDay(lang, e.date)} ${formatTime(lang, e.start)}`;
+  const last = e.end ? `${formatDay(lang, e.endDate)} ${formatTime(lang, e.end)}` : formatDay(lang, e.endDate);
+  const text = first + RANGE_SEP[lang] + last;
+  return timeZone ? `${text} (${timeZone})` : text;
+}
+
+/** True when the event runs over more than one day. */
+export const isPeriod = (e: Pick<CalendarEvent, "date" | "endDate">) => !!e.endDate && e.endDate > e.date;
+
 /** Short day of week for a YYYY-MM-DD date, capitalised: "Wed", "Qua". */
 export function formatDay(lang: Lang, date: string): string {
   const [y, m, d] = date.split("-").map(Number);
@@ -114,6 +132,21 @@ export function formatDay(lang: Lang, date: string): string {
 
 export function monthName(lang: Lang, month: number): string {
   return MONTH_NAMES[lang][month - 1];
+}
+
+/** Short month name, capitalised: "Jan", "Fév", "Mar". */
+export function shortMonth(lang: Lang, month: number): string {
+  const n = monthName(lang, month);
+  return (n.slice(0, 3) + (lang === "fr" && n.length > 4 ? "." : "")).replace(/^./, (c) => c.toUpperCase());
+}
+
+/** The date cell of a period: { first: 24, last: "31" } or, when it ends in another month, { first: 28, last: "4 Jan" }. */
+export function dateRange(lang: Lang, e: Pick<CalendarEvent, "date" | "endDate">): { first: number; last?: string } {
+  const first = Number(e.date.slice(8, 10));
+  if (!isPeriod(e)) return { first };
+  const end = e.endDate!;
+  const lastDay = String(Number(end.slice(8, 10)));
+  return { first, last: end.slice(0, 7) === e.date.slice(0, 7) ? lastDay : `${lastDay} ${shortMonth(lang, Number(end.slice(5, 7)))}` };
 }
 
 /** "DECEMBER 2026 | DÉCEMBRE 2026" */
@@ -200,8 +233,8 @@ export function formatEvent(event: CalendarEvent, group: Group, activity: Activi
     fill: activityFill(activity),
     lines: langs.map((lang) => ({
       lang,
-      day: formatDay(lang, event.date),
-      time: formatTime(lang, event.start, event.end, pick(group.timeZoneLabel, lang) || undefined),
+      day: isPeriod(event) ? `${formatDay(lang, event.date)} – ${formatDay(lang, event.endDate!)}` : formatDay(lang, event.date),
+      time: formatEventTime(lang, event, pick(group.timeZoneLabel, lang) || undefined),
       activity: formatActivity(lang, activity, group, fallback),
       location: typography(pick(group.location, lang, fallback)),
       note: typography(pick(event.note, lang, fallback)),

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Activity, Calendar, CalendarEvent, Group, Lang, Localized } from "@/lib/types";
-import { formatEvent, LANG_NAMES, monthName, sortEvents } from "@/lib/format";
+import { dateRange, formatEvent, isPeriod, LANG_NAMES, monthName, sortEvents } from "@/lib/format";
 import { copyMonth, deleteEvent, saveEvent, setPublished, type Result } from "@/lib/actions";
 import MonthPicker from "./MonthPicker";
 import styles from "./Editor.module.css";
@@ -24,12 +24,16 @@ interface Props {
 interface Draft {
   id?: string;
   date: string;
+  /** Last day of a period; "" = the same day as date. */
+  endDate: string;
+  allDay: boolean;
   start: string;
   end: string;
   groupId: string;
   activityId: string;
   note: Localized;
   cancelled: boolean;
+  closed: boolean;
   repeatWeekly: boolean;
 }
 
@@ -47,12 +51,15 @@ export default function EventEditor(p: Props) {
   );
   const blank = (): Draft => ({
     date: `${p.year}-${pad(p.month)}-01`,
+    endDate: "",
+    allDay: false,
     start: "",
     end: "",
     groupId: p.groups.find((g) => !g.archived)?.id ?? "",
     activityId: recentActivity,
     note: {},
     cancelled: false,
+    closed: false,
     repeatWeekly: false,
   });
   const [draft, setDraft] = useState<Draft>(blank);
@@ -61,10 +68,20 @@ export default function EventEditor(p: Props) {
   const groupById = new Map(p.groups.map((g) => [g.id, g]));
   const actById = new Map(p.activities.map((a) => [a.id, a]));
 
+  const endDate = draft.endDate && draft.endDate !== draft.date ? draft.endDate : "";
+  const period = !!endDate && endDate > draft.date;
+  const endBeforeStart = !!endDate && endDate < draft.date;
+  /** Moving the start date keeps a period's end date from falling before it. */
+  const setDate = (date: string) => setDraft((d) => ({ ...d, date, endDate: d.endDate && d.endDate < date ? "" : d.endDate }));
+
   const preview =
-    draft.start && groupById.get(draft.groupId) && actById.get(draft.activityId)
+    (draft.start || draft.allDay) && !endBeforeStart && groupById.get(draft.groupId) && actById.get(draft.activityId)
       ? formatEvent(
-          { id: "preview", orgId: "", date: draft.date, start: draft.start, end: draft.end || null, groupId: draft.groupId, activityId: draft.activityId, note: draft.note },
+          {
+            id: "preview", orgId: "", date: draft.date, endDate: endDate || null, allDay: draft.allDay,
+            start: draft.allDay ? "" : draft.start, end: draft.allDay ? null : draft.end || null,
+            groupId: draft.groupId, activityId: draft.activityId, note: draft.note,
+          },
           groupById.get(draft.groupId)!,
           actById.get(draft.activityId)!,
           p.langs,
@@ -83,16 +100,18 @@ export default function EventEditor(p: Props) {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (endBeforeStart) return setMsg({ ok: false, error: "The end date can't be before the start date." });
     act(
-      () => saveEvent(p.orgSlug, { ...draft, end: draft.end || null }),
-      () => setDraft((d) => ({ ...blank(), date: d.date, groupId: d.groupId, activityId: d.activityId })),
+      () => saveEvent(p.orgSlug, { ...draft, endDate: endDate || null, end: draft.end || null }),
+      () => setDraft((d) => ({ ...blank(), date: d.date, groupId: d.groupId, activityId: d.activityId, allDay: d.allDay })),
     );
   };
 
   const edit = (ev: CalendarEvent) => {
     setDraft({
-      id: ev.id, date: ev.date, start: ev.start, end: ev.end ?? "", groupId: ev.groupId, activityId: ev.activityId,
-      note: ev.note ?? {}, cancelled: !!ev.cancelled, repeatWeekly: false,
+      id: ev.id, date: ev.date, endDate: ev.endDate ?? "", allDay: !!ev.allDay, start: ev.start, end: ev.end ?? "",
+      groupId: ev.groupId, activityId: ev.activityId,
+      note: ev.note ?? {}, cancelled: !!ev.cancelled, closed: !!ev.closed, repeatWeekly: false,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -118,20 +137,42 @@ export default function EventEditor(p: Props) {
       <section className={styles.panel}>
         <h2>{draft.id ? "Edit event" : "Add an event"}</h2>
         <form onSubmit={submit} className={styles.form}>
-          <label>
-            Date
-            <input type="date" required value={draft.date} onChange={(e) => set("date", e.target.value)} />
-          </label>
           <div className={styles.row2}>
             <label>
-              Start
-              <input type="time" required step={900} value={draft.start} onChange={(e) => set("start", e.target.value)} />
+              {period ? "Start date" : "Date"}
+              <input type="date" required value={draft.date} onChange={(e) => setDate(e.target.value)} />
             </label>
             <label>
-              End <small>(optional)</small>
-              <input type="time" step={900} value={draft.end} onChange={(e) => set("end", e.target.value)} />
+              End date <small>(for several days)</small>
+              <input
+                type="date"
+                min={draft.date}
+                value={draft.endDate || draft.date}
+                aria-invalid={endBeforeStart || undefined}
+                onChange={(e) => set("endDate", e.target.value === draft.date ? "" : e.target.value)}
+              />
             </label>
           </div>
+          {endBeforeStart && <p className={styles.err}>The end date can&rsquo;t be before the start date.</p>}
+          <label className={styles.check}>
+            <input type="checkbox" checked={draft.allDay} onChange={(e) => set("allDay", e.target.checked)} /> All day
+          </label>
+          {!draft.allDay && (
+            <div className={styles.row2}>
+              <label>
+                {period ? "Start time (first day)" : "Start"}
+                <input type="time" required step={900} value={draft.start} onChange={(e) => set("start", e.target.value)} />
+              </label>
+              <label>
+                {period ? "End time (last day)" : "End"} <small>(optional)</small>
+                <input type="time" step={900} value={draft.end} onChange={(e) => set("end", e.target.value)} />
+              </label>
+            </div>
+          )}
+          <label className={styles.check}>
+            <input type="checkbox" checked={draft.closed} onChange={(e) => set("closed", e.target.checked)} />
+            Show as holiday/closed
+          </label>
           <label>
             Group
             <select value={draft.groupId} onChange={(e) => set("groupId", e.target.value)}>
@@ -160,7 +201,7 @@ export default function EventEditor(p: Props) {
               <input type="checkbox" checked={draft.cancelled} onChange={(e) => set("cancelled", e.target.checked)} /> Cancelled
             </label>
           </details>
-          {!draft.id && (
+          {!draft.id && !period && (
             <label className={styles.check}>
               <input type="checkbox" checked={draft.repeatWeekly} onChange={(e) => set("repeatWeekly", e.target.checked)} />
               Repeat every week for the rest of this month
@@ -227,9 +268,13 @@ export default function EventEditor(p: Props) {
             if (!g || !a) return null;
             const f = formatEvent(ev, g, a, p.langs.slice(0, 1));
             const l = f.lines[0];
+            const range = dateRange(p.langs[0], ev);
             return (
-              <li key={ev.id} className={`${styles.item} ${styles[f.colour]}`}>
-                <div className={styles.day}>{f.dayNumber}</div>
+              <li key={ev.id} className={`${styles.item} ${ev.closed ? styles.closed : styles[f.colour]}`}>
+                <div className={styles.day}>
+                  {range.first}
+                  {isPeriod(ev) && <div className={styles.dayTo}>– {range.last}</div>}
+                </div>
                 <div className={styles.itemText}>
                   <strong>{l.day} · {l.time}</strong>
                   <div style={ev.cancelled ? { textDecoration: "line-through" } : undefined}>{l.activity}</div>
@@ -239,7 +284,7 @@ export default function EventEditor(p: Props) {
                   <button
                     className="btn"
                     disabled={pending}
-                    onClick={() => confirm(`Delete “${l.activity}” on ${l.day} ${f.dayNumber}?`) && act(() => deleteEvent(p.orgSlug, ev.id))}
+                    onClick={() => confirm(`Delete “${l.activity}” on ${l.day} ${f.dayNumber}${isPeriod(ev) ? `–${range.last}` : ""}?`) && act(() => deleteEvent(p.orgSlug, ev.id))}
                   >
                     Delete
                   </button>

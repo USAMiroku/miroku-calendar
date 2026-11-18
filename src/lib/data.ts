@@ -29,12 +29,32 @@ export const toCalendar = (r: any): Calendar => ({
   id: r.id, orgId: r.org_id, slug: r.slug, name: r.name, groupIds: r.group_ids ?? [],
   includeNational: r.include_national, settings: r.settings,
 });
-export const toEvent = (r: any): CalendarEvent => ({
-  id: r.id, orgId: r.org_id, date: r.date, start: String(r.start_time).slice(0, 5),
-  end: r.end_time ? String(r.end_time).slice(0, 5) : null, groupId: r.group_id, activityId: r.activity_id,
-  note: r.note ?? {}, cancelled: r.cancelled,
-});
+export const toEvent = (r: any): CalendarEvent => {
+  const allDay = !!r.all_day;
+  return {
+    id: r.id, orgId: r.org_id, date: r.date,
+    endDate: r.end_date && r.end_date > r.date ? r.end_date : null,
+    allDay,
+    start: allDay || !r.start_time ? "" : String(r.start_time).slice(0, 5),
+    end: !allDay && r.end_time ? String(r.end_time).slice(0, 5) : null,
+    groupId: r.group_id, activityId: r.activity_id,
+    note: r.note ?? {}, cancelled: r.cancelled, closed: !!r.closed,
+  };
+};
+
+/** Events that touch the days from `from` (included) to `to` (not included), including periods that started earlier. */
+async function eventsOverlapping(sb: any, orgId: string, from: string, to: string): Promise<CalendarEvent[]> {
+  const base = () => sb.from("events").select("*").eq("org_id", orgId).lt("date", to);
+  let res = await base().or(`date.gte.${from},end_date.gte.${from}`).order("date").order("start_time");
+  // Before the all-day/period SQL has been run there is no end_date column: fall back to the old query.
+  if (res.error && /end_date/.test(res.error.message ?? "")) res = await base().gte("date", from).order("date").order("start_time");
+  if (res.error) throw res.error;
+  return (res.data ?? []).map(toEvent);
+}
 /* eslint-enable @typescript-eslint/no-explicit-any */
+
+/** The last day an event touches. */
+export const lastDay = (e: Pick<CalendarEvent, "date" | "endDate">) => e.endDate || e.date;
 
 // ---------- queries ----------
 
@@ -75,17 +95,16 @@ export async function getMonthData(orgSlug: string, calSlug: string, year: numbe
   const { from, to } = monthRange(year, month);
 
   if (DEMO_MODE) {
-    const events = canadaSeed.events.filter((e) => e.date >= from && e.date < to);
+    const events = canadaSeed.events.filter((e) => lastDay(e) >= from && e.date < to);
     return { ...lists, calendar, events, year, month, published: true };
   }
 
   const sb = await supabaseServer();
-  const [ev, pub] = await Promise.all([
-    sb.from("events").select("*").eq("org_id", lists.org.id).gte("date", from).lt("date", to),
+  const [events, pub] = await Promise.all([
+    eventsOverlapping(sb, lists.org.id, from, to),
     sb.from("published_months").select("calendar_id").eq("calendar_id", calendar.id).eq("year", year).eq("month", month).maybeSingle(),
   ]);
-  if (ev.error) throw ev.error;
-  return { ...lists, calendar, events: (ev.data ?? []).map(toEvent), year, month, published: !!pub.data };
+  return { ...lists, calendar, events, year, month, published: !!pub.data };
 }
 
 /** All of an organization's events in a month, for the editor, plus which calendars have published it. */
@@ -93,17 +112,16 @@ export async function getOrgMonth(orgId: string, year: number, month: number) {
   const { from, to } = monthRange(year, month);
   if (DEMO_MODE) {
     return {
-      events: canadaSeed.events.filter((e) => e.date >= from && e.date < to),
+      events: canadaSeed.events.filter((e) => lastDay(e) >= from && e.date < to),
       publishedCalendarIds: canadaSeed.calendars.map((c) => c.id),
     };
   }
   const sb = await supabaseServer();
-  const [ev, pub] = await Promise.all([
-    sb.from("events").select("*").eq("org_id", orgId).gte("date", from).lt("date", to).order("date").order("start_time"),
+  const [events, pub] = await Promise.all([
+    eventsOverlapping(sb, orgId, from, to),
     sb.from("published_months").select("calendar_id").eq("year", year).eq("month", month),
   ]);
-  if (ev.error) throw ev.error;
-  return { events: (ev.data ?? []).map(toEvent), publishedCalendarIds: (pub.data ?? []).map((p) => p.calendar_id as string) };
+  return { events, publishedCalendarIds: (pub.data ?? []).map((p) => p.calendar_id as string) };
 }
 
 /** Every language used by any of the organization's calendars, primary languages first. */
@@ -125,16 +143,15 @@ export async function getFeedData(orgSlug: string, calSlug: string, today = new 
   const to = monthRange(y + 1, m).to;
 
   if (DEMO_MODE) {
-    return { ...lists, calendar, holidayRange: { from, to }, events: canadaSeed.events.filter((e) => e.date >= from && e.date < to) };
+    return { ...lists, calendar, holidayRange: { from, to }, events: canadaSeed.events.filter((e) => lastDay(e) >= from && e.date < to) };
   }
   const sb = await supabaseServer();
-  const [ev, pub] = await Promise.all([
-    sb.from("events").select("*").eq("org_id", lists.org.id).gte("date", from).lt("date", to),
+  const [all, pub] = await Promise.all([
+    eventsOverlapping(sb, lists.org.id, from, to),
     sb.from("published_months").select("year, month").eq("calendar_id", calendar.id),
   ]);
-  if (ev.error) throw ev.error;
   // Only months this calendar has published, so drafts never reach anyone's phone.
   const published = new Set((pub.data ?? []).map((p) => `${p.year}-${pad(p.month)}`));
-  const events = (ev.data ?? []).map(toEvent).filter((e) => published.has(e.date.slice(0, 7)));
+  const events = all.filter((e) => published.has(e.date.slice(0, 7)));
   return { ...lists, calendar, events, holidayRange: { from, to } };
 }

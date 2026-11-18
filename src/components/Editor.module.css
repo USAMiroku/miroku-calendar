@@ -22,7 +22,10 @@
 .national { background: #D9E1F2; }
 .public { background: #E2EFDA; }
 .default { background: #fff; }
-.day { font-size: 1.6rem; font-weight: 800; min-width: 36px; text-align: center; }
+.day { font-size: 1.6rem; font-weight: 800; min-width: 36px; text-align: center; line-height: 1.1; }
+.dayTo { font-size: 0.8rem; font-weight: 700; white-space: nowrap; }
+.closed { background: #FFF2CC; }
+.check small { font-weight: 400; color: var(--muted); }
 .itemText { flex: 1; min-width: 0; font-size: 14px; }
 .itemBtns { display: flex; gap: 6px; }
 .calList { list-style: none; padding: 0; display: grid; gap: 8px; }

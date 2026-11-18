@@ -43,13 +43,19 @@ export interface Activity {
 export interface CalendarEvent {
   id: string;
   orgId: string;
-  date: string; // YYYY-MM-DD
-  start: string; // HH:MM, 24-hour
-  end?: string | null; // HH:MM, 24-hour
+  date: string; // YYYY-MM-DD, the first day
+  /** Last day of an event that runs over several days (YYYY-MM-DD). Empty = the same day. */
+  endDate?: string | null;
+  /** An all-day event has no times: start is "" and end is empty. */
+  allDay?: boolean;
+  start: string; // HH:MM, 24-hour ("" for an all-day event)
+  end?: string | null; // HH:MM, 24-hour; on a period, the time on the last day
   groupId: string;
   activityId: string;
   note?: Localized;
   cancelled?: boolean;
+  /** "Show as holiday/closed": shaded in the holiday colour. */
+  closed?: boolean;
 }
 
 export type BannerStyle = "side-bands" | "top-band" | "plain";

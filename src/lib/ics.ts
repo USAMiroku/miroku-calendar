@@ -42,6 +42,13 @@ export function zonedToUtc(date: string, time: string, zone: string): Date {
   return new Date(t);
 }
 
+/** "2026-12-24" + 1 day → "2026-12-25". */
+export function addDays(date: string, days: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+const ymd = (date: string) => date.replace(/-/g, "");
+
 const stamp = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 
 /** Escapes text for an .ics value. */
@@ -89,9 +96,19 @@ export function buildIcs({ calendar, groups, activities, events, pageUrl, holida
     const e = row.event;
     const group = groupById.get(e.groupId)!;
     const zone = ianaZone(timeZoneId(group.timeZoneLabel ?? {}), home);
-    const start = zonedToUtc(e.date, e.start, zone);
-    let end = e.end ? zonedToUtc(e.date, e.end, zone) : null;
-    if (!end || end <= start) end = new Date(start.getTime() + 60 * 60000);
+    const lastDate = e.endDate && e.endDate > e.date ? e.endDate : e.date;
+    const allDay = !!e.allDay || !e.start;
+    let timing: string[];
+    if (allDay) {
+      // All-day entries: the end date is the day after the last day, as the .ics format asks.
+      timing = [`DTSTART;VALUE=DATE:${ymd(e.date)}`, `DTEND;VALUE=DATE:${ymd(addDays(lastDate, 1))}`];
+    } else {
+      const start = zonedToUtc(e.date, e.start, zone);
+      // A period without an end time runs to the end of its last day.
+      let end = e.end ? zonedToUtc(lastDate, e.end, zone) : lastDate !== e.date ? zonedToUtc(addDays(lastDate, 1), "00:00", zone) : null;
+      if (!end || end <= start) end = new Date(start.getTime() + 60 * 60000);
+      timing = [`DTSTART:${stamp(start)}`, `DTEND:${stamp(end)}`];
+    }
 
     const [first, ...others] = row.lines;
     const cancelled = e.cancelled ? `${LABELS.cancelled[first.lang]}: ` : "";
@@ -107,14 +124,15 @@ export function buildIcs({ calendar, groups, activities, events, pageUrl, holida
       "BEGIN:VEVENT",
       `UID:${e.id}@miroku-calendar`,
       `DTSTAMP:${stamp(now)}`,
-      `DTSTART:${stamp(start)}`,
-      `DTEND:${stamp(end)}`,
+      ...timing,
       `SUMMARY:${escapeText(cancelled + first.activity)}`,
     );
     if (first.location) lines.push(`LOCATION:${escapeText(first.location)}`);
     lines.push(`DESCRIPTION:${escapeText(description.join("\n"))}`);
+    // Holiday/closed entries don't mark people as busy. All-day entries have no reminder.
+    if (e.closed) lines.push("TRANSP:TRANSPARENT");
     if (e.cancelled) lines.push("STATUS:CANCELLED");
-    else {
+    else if (!allDay) {
       lines.push(
         "BEGIN:VALARM",
         "ACTION:DISPLAY",
