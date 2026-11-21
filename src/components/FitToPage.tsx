@@ -16,9 +16,15 @@ export default function FitToPage({ selector = "article" }: { selector?: string 
       const el = document.querySelector<HTMLElement>(selector);
       if (!el) return;
       el.style.removeProperty("--print-zoom");
-      const h = el.getBoundingClientRect().height;
-      const zoom = Math.max(MIN_ZOOM, Math.min(1, PAGE_HEIGHT / h));
-      el.style.setProperty("--print-zoom", zoom.toFixed(3));
+      let zoom = Math.min(1, PAGE_HEIGHT / el.getBoundingClientRect().height);
+      // Text wraps a little differently once zoomed, so check again and shrink a touch more if needed.
+      for (let i = 0; i < 4 && zoom > MIN_ZOOM; i++) {
+        el.style.setProperty("--print-zoom", Math.max(MIN_ZOOM, zoom).toFixed(3));
+        const h = el.getBoundingClientRect().height;
+        if (h <= PAGE_HEIGHT) break;
+        zoom = zoom * (PAGE_HEIGHT / h) - 0.005;
+      }
+      el.style.setProperty("--print-zoom", Math.max(MIN_ZOOM, zoom).toFixed(3));
     };
     fit();
     window.addEventListener("beforeprint", fit);

@@ -32,6 +32,7 @@ export const LABELS: Record<string, Record<Lang, string>> = {
   time: { en: "TIME", fr: "HEURE", pt: "HORÁRIO", es: "HORA" },
   activity: { en: "ACTIVITY", fr: "ACTIVITÉ", pt: "ATIVIDADE", es: "ACTIVIDAD" },
   location: { en: "LOCATION", fr: "LIEU", pt: "LOCAL", es: "LUGAR" },
+  notes: { en: "NOTES", fr: "NOTES", pt: "OBSERVAÇÕES", es: "NOTAS" },
   calendar: { en: "ACTIVITIES CALENDAR", fr: "CALENDRIER DES ACTIVITÉS", pt: "CALENDÁRIO DE ATIVIDADES", es: "CALENDARIO DE ACTIVIDADES" },
   noEvents: { en: "No activities scheduled", fr: "Aucune activité prévue", pt: "Nenhuma atividade programada", es: "No hay actividades programadas" },
   cancelled: { en: "CANCELLED", fr: "ANNULÉ", pt: "CANCELADO", es: "CANCELADO" },
