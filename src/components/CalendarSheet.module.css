@@ -45,7 +45,12 @@
 .colDay { width: 9%; }
 .colTime { width: 15%; }
 .colLoc { width: 33.5%; }
-.table td:last-child { font-size: 9pt; }
+/* With a Notes column the activity and location give up some width. */
+.withNotes .colTime { width: 14%; }
+.withNotes .colNotes { width: 19%; }
+.withNotes .colLoc { width: 25%; }
+.table td:last-child, .table td.notesCell { font-size: 9pt; }
+.table td.notesCell .primary { font-weight: 400; }
 .table th.colDate, .table th.colDay, .table td.dayCell { text-align: center; }
 .dateCell { text-align: center; font-size: 22pt; font-weight: 800; background: #fff; color: #222; }
 /* A period's date cell: "24" with "– 31" under it. */

@@ -193,7 +193,7 @@ export default function EventEditor(p: Props) {
             <summary>More options</summary>
             {p.langs.map((l) => (
               <label key={l}>
-                Note ({LANG_NAMES[l]}) <small>(optional, shown after the activity)</small>
+                Note ({LANG_NAMES[l]}) <small>(optional, shown in its own Notes column)</small>
                 <input value={draft.note[l] ?? ""} onChange={(e) => set("note", { ...draft.note, [l]: e.target.value })} />
               </label>
             ))}

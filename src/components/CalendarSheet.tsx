@@ -31,6 +31,9 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
   ].sort((a, b) => a.date.localeCompare(b.date) || a.rank - b.rank);
   const holidayName = (h: Holiday) => langs.map((l) => typography(pick(h.name, l, langs[0])));
   const anyClosed = rows.some((r) => r.event.closed);
+  // Notes get their own column, but only in a month where at least one event has a note.
+  const hasNotes = rows.some((r) => r.lines.some((l) => l.note));
+  const columns = hasNotes ? 6 : 5;
   const rowClass = (r: FormattedEvent) =>
     r.event.closed ? styles.closedRow : r.fill ? styles.filled : styles[r.colour];
 
@@ -88,20 +91,21 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
 
       {openHours && <div className={styles.openHours}>{openHours}</div>}
 
-      <table className={styles.table}>
+      <table className={`${styles.table} ${hasNotes ? styles.withNotes : ""}`}>
         <thead>
           <tr>
             <th className={styles.colDate}>{label("date", langs)}</th>
             <th className={styles.colDay}>{label("day", langs)}</th>
             <th className={styles.colTime}>{label("time", langs)}</th>
             <th>{label("activity", langs)}</th>
+            {hasNotes && <th className={styles.colNotes}>{label("notes", langs)}</th>}
             <th className={styles.colLoc}>{label("location", langs)}</th>
           </tr>
         </thead>
         <tbody>
           {items.length === 0 && (
             <tr>
-              <td colSpan={5} className={styles.empty}>
+              <td colSpan={columns} className={styles.empty}>
                 {label("noEvents", langs)}
               </td>
             </tr>
@@ -119,7 +123,7 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
                 <tr key={`h-${it.holiday.key}`} className={styles.holiday}>
                   {dateCell}
                   <Cell lines={langs.map((l) => formatDay(l, it.date))} className={styles.dayCell} />
-                  <Cell lines={holidayName(it.holiday)} colSpan={3} />
+                  <Cell lines={holidayName(it.holiday)} colSpan={columns - 2} />
                 </tr>
               );
             }
@@ -135,9 +139,9 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
                 <Cell lines={r.lines.map((l) => l.time)} />
                 <Cell
                   lines={r.lines.map((l) => l.activity)}
-                  extra={r.lines.map((l) => l.note)}
                   prefix={r.event.cancelled ? label("cancelled", langs) : undefined}
                 />
+                {hasNotes && <Cell lines={r.lines.map((l) => l.note)} className={styles.notesCell} />}
                 <Cell lines={r.lines.map((l) => l.location)} />
               </tr>
             );
@@ -174,7 +178,7 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
                   {l.day} · {l.time}
                   <br />
                   {l.activity}
-                  {l.note ? ` · ${l.note}` : ""}
+                  {l.note && <span className={styles.note}> · {l.note}</span>}
                 </div>
               ))}
               <div className={styles.cardLoc}>{joinDistinct(r.lines.map((l) => l.location), " / ")}</div>
@@ -218,25 +222,22 @@ export default function CalendarSheet({ data }: { data: MonthData }) {
 /** One cell: first language bold, second italic grey. Identical lines are shown once. */
 function Cell({
   lines,
-  extra,
   prefix,
   colSpan,
   className,
 }: {
   lines: string[];
-  extra?: string[];
   prefix?: string;
   colSpan?: number;
   className?: string;
 }) {
-  const show = lines.length === 2 && lines[0] === lines[1] ? [lines[0]] : lines;
+  const show = (lines.length === 2 && lines[0] === lines[1] ? [lines[0]] : lines).filter(Boolean);
   return (
     <td colSpan={colSpan} className={className}>
       {prefix && <div className={styles.cancelTag}>{prefix}</div>}
       {show.map((t, i) => (
         <div key={i} className={i === 0 ? styles.primary : styles.secondary}>
           {t}
-          {extra?.[i] ? <span className={styles.note}> · {extra[i]}</span> : null}
         </div>
       ))}
     </td>

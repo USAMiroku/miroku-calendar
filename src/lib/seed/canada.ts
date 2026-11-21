@@ -138,13 +138,15 @@ export const torontoCalendar: Calendar = {
 };
 
 let n = 0;
-const ev = (date: string, start: string, end: string | null, groupId: string, activityId: string): CalendarEvent => ({
-  id: `demo-${++n}`, orgId: ORG, date, start, end, groupId, activityId,
+const ev = (
+  date: string, start: string, end: string | null, groupId: string, activityId: string, note?: CalendarEvent["note"],
+): CalendarEvent => ({
+  id: `demo-${++n}`, orgId: ORG, date, start, end, groupId, activityId, ...(note ? { note } : {}),
 });
 
 /** Sample December 2026 events for demo mode. Not real data. */
 export const canadaDemoEvents: CalendarEvent[] = [
-  ev("2026-12-05", "10:00", "11:30", "g-toronto", "a-cleanup"),
+  ev("2026-12-05", "10:00", "11:30", "g-toronto", "a-cleanup", { en: "Please bring gloves", fr: "Apportez des gants, s’il vous plaît" }),
   ev("2026-12-06", "11:00", null, "g-toronto", "a-monthly"),
   ev("2026-12-06", "16:00", "19:00", "g-montreal", "a-johrei"),
   ev("2026-12-10", "18:00", "20:00", "g-calgary", "a-johrei"),
@@ -152,7 +154,7 @@ export const canadaDemoEvents: CalendarEvent[] = [
   ev("2026-12-13", "12:00", null, "g-hq", "a-na"),
   ev("2026-12-15", "18:30", null, "g-edmonton", "a-johrei"),
   ev("2026-12-19", "09:00", "11:00", "g-pei", "a-johrei"),
-  ev("2026-12-20", "14:00", "16:00", "g-toronto", "a-johrei"),
+  ev("2026-12-20", "14:00", "16:00", "g-toronto", "a-johrei", { en: "Followed by a year-end potluck", fr: "Suivi d’un repas-partage de fin d’année" }),
 ];
 
 export const canadaSeed = {
